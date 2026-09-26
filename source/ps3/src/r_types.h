@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "win32_shim.h"
 
 typedef struct {
     float    sx, sy;     /* screen-space position */

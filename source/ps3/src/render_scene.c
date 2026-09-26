@@ -380,19 +380,16 @@ void BuildCameraView(Player *player, CamStateEntry *cameraParams,
          * then << 2 = splineIdx*12. Add g_introSplineBase.
          * Read spline[0] = *(int*)(base + offset) */
         int *splineBase = (int *)g_introSplineBase;
-        int splineOff = splineIdx * 12;
-        int splineX = *(int *)((char *)splineBase + splineOff);      /* 0x42365a: [eax] */
+        int splineX = 0, splineY = 0, splineZ = 0;
+        if (splineBase != NULL) {
+            int splineOff = splineIdx * 12;
+            splineX = *(int *)((char *)splineBase + splineOff);      /* 0x42365a: [eax] */
+            splineX = -splineX;                /* neg eax */
 
-        /* 0x42365e-0x423661: negate splineX */
-        splineX = -splineX;                /* neg eax */
-
-        /* 0x423664-0x42367d: read splineY and splineZ
-         * recompute offset same way, read [+4] and [+8] */
-        int splineY = *(int *)((char *)splineBase + splineOff + 4);  /* 0x42367d: [eax+4] */
-        int splineZ = *(int *)((char *)splineBase + splineOff + 8);  /* 0x423680: [eax+8] */
-
-        /* 0x423683-0x42368b: negate splineZ */
-        splineZ = -splineZ;                /* neg eax at 0x423686 */
+            splineY = *(int *)((char *)splineBase + splineOff + 4);  /* 0x42367d: [eax+4] */
+            splineZ = *(int *)((char *)splineBase + splineOff + 8);  /* 0x423680: [eax+8] */
+            splineZ = -splineZ;                /* neg eax at 0x423686 */
+        }
 
         /* 0x42368e-0x4236b9: camX = (-player[0] >> 12) - fixmul16(sinTable[behindAngle], camDist)
          * playerYaw from player+0x6E dword >> 16

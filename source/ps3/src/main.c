@@ -523,6 +523,13 @@ void PostRaceHandling2P(void)
 /* WinMain @ 0x004CDFC4 — 8254 bytes */
 int main(int argc, char *argv[])
 {
+#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+    extern void ps3_set_exe_path(const char *argv0);
+    if (argc > 0 && argv != NULL && argv[0] != NULL) {
+        ps3_set_exe_path(argv[0]);
+    }
+#endif
+
     /* Parse command-line options */
     const char *dataDir = DATA_DIR;
 
@@ -592,15 +599,18 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* Existence test via fopen (access() is absent from the KOS/newlib
+    /* Existence test via fOpen (access() is absent from the KOS/newlib
      * libc used by the Dreamcast build). */
-    FILE *probe = fopen(PATH_GENERAL_BIT, "rb");
+    printf("[PS3 main] Probing data file: %s\n", PATH_GENERAL_BIT);
+    FILE *probe = fOpen(PATH_GENERAL_BIT, "rb");
     if (!probe) {
+        printf("[PS3 main] Failed to find %s\n", PATH_GENERAL_BIT);
         fprintf(stderr,
                 "Game data not found here. Place the binary in the data folder, "
                 "or pass the data path as an argument, and try again.\n");
         return 1;
     }
+    printf("[PS3 main] Successfully opened %s!\n", PATH_GENERAL_BIT);
     fclose(probe);
 
     /* Save menu settings on any exit (normal, window close, SCREEN_QUIT) */

@@ -510,7 +510,7 @@ void TickPlayerAnimation(Player *player)
 
     /* Read next frame from stream */
     const short *framePtr = g_animDataPtrs[playerSlot];
-    if (framePtr == NULL) {
+    if (framePtr == NULL || (uintptr_t)framePtr < 0x10000) {
         return;
     }
     g_animDataPtrs[playerSlot] = framePtr + 1;
@@ -805,6 +805,9 @@ void AdvancePlayerAnimation(int playerIndex)                 /* EAX */
 
     /* Read data pointer from 64-bit side-storage, advance by one short */
     const short *dp = g_animDataPtrs[playerIndex];
+    if (dp == NULL || (uintptr_t)dp < 0x10000) {
+        return;
+    }
     short val = *dp;
     dp++;
     g_animDataPtrs[playerIndex] = dp;

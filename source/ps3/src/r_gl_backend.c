@@ -8,7 +8,10 @@
 /* SOFT=1 builds replace this whole file with r_soft_backend.c. */
 #ifndef SONICR_SOFT_RENDER
 
-#ifdef __APPLE__
+#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#include <PSGL/psgl.h>
+#include <PSGL/psglu.h>
+#elif defined(__APPLE__)
 #include <OpenGL/gl.h>
 #elif defined(_WIN32)
 #include <GL/glew.h>
@@ -214,8 +217,8 @@ void R_FlushState(void)
 
     /* Texture environment (overbright) */
     if (s_desired.texEnv != s_current.texEnv) {
-#ifdef __EMSCRIPTEN__
-        /* WebGL legacy GL emulation doesn't support GL_COMBINE/GL_ADD_SIGNED.
+#if defined(__EMSCRIPTEN__) || defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+        /* WebGL/PSGL legacy GL emulation doesn't support GL_COMBINE/GL_ADD_SIGNED.
          * Fall back to plain GL_MODULATE for all modes. */
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 #else
@@ -443,6 +446,58 @@ void R_ResetState(void)
  * Geometry submission — immediate draw
  * ===================================================================== */
 
+#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+
+typedef struct {
+    float x, y, z, w;
+    uint8_t r, g, b, a;
+    float u, v;
+} PSGLVertex;
+
+static PSGLVertex s_psglVerts[16];
+
+void R_DrawTriFan(const RenderVertex *v, int count)
+{
+    if (count < 3 || count > 16) {
+        return;
+    }
+
+    R_FlushState();
+
+    for (int i = 0; i < count; i++) {
+        float w = (v[i].rhw > 0.0f) ? (1.0f / v[i].rhw) : 1.0f;
+        s_psglVerts[i].x = v[i].sx * w;
+        s_psglVerts[i].y = v[i].sy * w;
+        s_psglVerts[i].z = v[i].sz * w;
+        s_psglVerts[i].w = w;
+
+        uint32_t argb = v[i].color;
+        s_psglVerts[i].a = (uint8_t)((argb >> 24) & 0xFF);
+        s_psglVerts[i].r = (uint8_t)((argb >> 16) & 0xFF);
+        s_psglVerts[i].g = (uint8_t)((argb >>  8) & 0xFF);
+        s_psglVerts[i].b = (uint8_t)((argb      ) & 0xFF);
+
+        s_psglVerts[i].u = v[i].u;
+        s_psglVerts[i].v = v[i].v;
+    }
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+    glVertexPointer(4, GL_FLOAT, sizeof(PSGLVertex), &s_psglVerts[0].x);
+    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(PSGLVertex), &s_psglVerts[0].r);
+    glTexCoordPointer(2, GL_FLOAT, sizeof(PSGLVertex), &s_psglVerts[0].u);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+}
+
+#else
+
 /* Emit a single vertex via GL immediate mode.
  * Uses glVertex4f with W=1/RHW for perspective-correct interpolation. */
 static inline void R_EmitVertex(const RenderVertex *v)
@@ -473,6 +528,8 @@ void R_DrawTriFan(const RenderVertex *v, int count)
     }
     glEnd();
 }
+
+#endif
 
 void R_DrawTri(const RenderVertex v[3])
 {

@@ -143,9 +143,10 @@ void VehiclePhysicsPreUpdate(Player *player, unsigned short abilityBits)
         }
 
         /* Direction: forward along player heading */
-        particle->velX = g_sinTable[player->angleYaw];     /* dirX = sin(yaw) */
+        int yaw = player->angleYaw & 0xFFF;
+        particle->velX = g_sinTable[yaw];     /* dirX = sin(yaw) */
         particle->velY = 0;                                /* dirY = 0 */
-        particle->velZ = g_cosTable[player->angleYaw];     /* dirZ = cos(yaw) */
+        particle->velZ = g_cosTable[yaw];     /* dirZ = cos(yaw) */
         particle->accelY = 0;
 
         /* Particle parameters */

@@ -20,7 +20,10 @@
 /* SOFT=1 builds replace this whole file with r_soft_backend.c. */
 #ifndef SONICR_SOFT_RENDER
 
-#ifdef __APPLE__
+#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#include <PSGL/psgl.h>
+#include <PSGL/psglu.h>
+#elif defined(__APPLE__)
 #include <OpenGL/gl.h>
 #elif defined(_WIN32)
 #include <GL/glew.h>
@@ -494,7 +497,11 @@ void BeginFrame(void)
 #ifndef SONICR_GLES2
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+    glOrthof(left, right, bottom, top, 0.0f, -1.0f);
+#else
     glOrtho(left, right, bottom, top, 0, -1);
+#endif
 
     /* Modelview: transform game screen coords [0,W]×[0,H] → clip volume */
     glMatrixMode(GL_MODELVIEW);

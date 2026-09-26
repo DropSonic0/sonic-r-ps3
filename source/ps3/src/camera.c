@@ -112,10 +112,13 @@ void BuildChaseCamera(Player *player, CamStateEntry *camStruct)
         int frameIdx = maxFrame - g_introCountdown;
         int *spline = (int *)g_introSplineBase;
 
-        /* Spline: 3 ints per point (X, Y, Z). Negate X and Z. */
-        int splineX = -spline[frameIdx * 3 + 0];             /* [ebp-0x14] */
-        int splineY =  spline[frameIdx * 3 + 1];             /* [ebp-0x1c] */
-        int splineZ = -spline[frameIdx * 3 + 2];             /* [ebp-0x18] */
+        int splineX = 0, splineY = 0, splineZ = 0;
+        if (spline != NULL) {
+            /* Spline: 3 ints per point (X, Y, Z). Negate X and Z. */
+            splineX = -spline[frameIdx * 3 + 0];             /* [ebp-0x14] */
+            splineY =  spline[frameIdx * 3 + 1];             /* [ebp-0x1c] */
+            splineZ = -spline[frameIdx * 3 + 2];             /* [ebp-0x18] */
+        }
 
         /* Camera X: worldX - sin(invYaw)*dist/65536 + splineX */
         int sinOff = SDIV65536(g_sinTable[invYaw] * dist);
