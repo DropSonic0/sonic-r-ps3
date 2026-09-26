@@ -43,15 +43,38 @@ typedef int net_socket_t;
 #define NET_WOULD_BLOCK(e) ((e) == EAGAIN || (e) == EWOULDBLOCK)
 #else
 #include <fcntl.h>
+#if !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
 #include <unistd.h>
+#endif
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK 11
+#endif
+#ifndef EAGAIN
+#define EAGAIN 11
+#endif
+#ifndef O_NONBLOCK
+#define O_NONBLOCK 0x0400
+#endif
+#ifndef F_GETFL
+#define F_GETFL 3
+#endif
+#ifndef F_SETFL
+#define F_SETFL 4
+#endif
+
 typedef int net_socket_t;
 #define NET_INVALID_SOCKET (-1)
+#if defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#define NET_CLOSESOCKET(s) (0)
+#else
 #define NET_CLOSESOCKET    close
+#endif
 #define NET_LAST_ERROR()   errno
 #define NET_WOULD_BLOCK(e) ((e) == EAGAIN || (e) == EWOULDBLOCK)
 #endif
@@ -106,6 +129,12 @@ static int set_nonblocking(net_socket_t fd)
     return ioctlsocket(fd, FIONBIO, &mode);
 #elif defined(SONICR_DC)
     return fs_fcntl(fd, F_SETFL, O_NONBLOCK);
+#elif defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#ifndef SO_NBIO
+#define SO_NBIO 0x1200
+#endif
+    int opt = 1;
+    return setsockopt(fd, SOL_SOCKET, SO_NBIO, (const char *)&opt, sizeof(opt));
 #else
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0) return -1;
@@ -479,7 +508,7 @@ int net_slot_is_connected(int slot)
     return s_playerValid[slot] ? 1 : 0;
 }
 
-#ifdef SONICR_DC
+#if defined(SONICR_DC) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
 
 int net_probe_ping(const char *ip, int port, int timeout_ms)
 {

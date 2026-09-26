@@ -21,6 +21,7 @@
 #define PLAYER_STRUCT_H
 
 #include <stddef.h>   /* offsetof */
+#include "win32_shim.h"
 
 /* =====================================================================
  * Sub-struct: 3x3 rotation matrix with stride-4 int layout

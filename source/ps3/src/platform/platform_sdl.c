@@ -14,6 +14,8 @@
  *   DirectInput-shaped model the binary's remap UI was written against.
  */
 
+#if defined(SONICR_SDL) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 #include <stdio.h>
@@ -884,3 +886,5 @@ int platform_get_region(void)
 {
     return 0;
 }
+
+#endif /* SONICR_SDL && !PS3 */

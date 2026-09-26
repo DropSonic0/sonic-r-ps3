@@ -8,8 +8,14 @@
  * Game logic is translated as-is.
  */
 
+#if !defined(_WIN32) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
 #include <unistd.h>
 #include <getopt.h>
+#endif
+
+#if defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#define chdir(path) (0)
+#endif
 
 #include "sonicr_types.h"
 #include "sonicr_globals.h"
@@ -520,6 +526,7 @@ int main(int argc, char *argv[])
     /* Parse command-line options */
     const char *dataDir = DATA_DIR;
 
+#if !defined(_WIN32) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
     static struct option long_opts[] = {
         {"host", required_argument, NULL, 'h'},
         {"port", required_argument, NULL, 'p'},
@@ -552,9 +559,16 @@ int main(int argc, char *argv[])
                 break;
         }
     }
-    if (optind < argc) {
+    int hasExplicitDataDir = (optind < argc);
+    if (hasExplicitDataDir) {
         dataDir = argv[optind];
     }
+#else
+    int hasExplicitDataDir = (argc > 1 && argv[1] != NULL && argv[1][0] != '\0');
+    if (hasExplicitDataDir) {
+        dataDir = argv[1];
+    }
+#endif
 
     /* Get EXE directory, set as working directory
      * Original: GetModuleFileNameA, strip trailing \\, SetCurrentDirectoryA.
@@ -563,7 +577,7 @@ int main(int argc, char *argv[])
      * can sit in the data folder and launch from anywhere, including a
      * double-click). DC/web have no exe-dir concept, so platform_base_path()
      * returns NULL there and we fall back to DATA_DIR (/cd, /pc, .). */
-    if (optind < argc) { /* explicit data path wins */
+    if (hasExplicitDataDir) { /* explicit data path wins */
         if (chdir(dataDir) != 0) {
             fprintf(stderr, "Cannot chdir to data directory: %s\n", dataDir);
             return 1;

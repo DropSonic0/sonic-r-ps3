@@ -17,6 +17,19 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/* Fallback for _Static_assert on pre-C11 compilers (e.g., PS3 SNC/GCC) */
+#ifndef _Static_assert
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+/* C11 native keyword */
+#elif defined(__cplusplus) && __cplusplus >= 201103L
+/* C++11 native keyword */
+#else
+#define STATIC_ASSERT_CONCAT_IMPL(x, y) x##y
+#define STATIC_ASSERT_CONCAT(x, y) STATIC_ASSERT_CONCAT_IMPL(x, y)
+#define _Static_assert(cond, msg) typedef char STATIC_ASSERT_CONCAT(static_assert_failed_, __LINE__)[(cond) ? 1 : -1]
+#endif
+#endif
+
 /* Basic Windows types */
 typedef uint32_t    DWORD;
 typedef uint16_t    WORD;

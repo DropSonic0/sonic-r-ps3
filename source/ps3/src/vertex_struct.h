@@ -11,6 +11,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "win32_shim.h"
 
 typedef struct {
     int screenX;     /* [0]  0x00 — projected screen X (written by transform) */

@@ -1,5 +1,20 @@
 #include "net_upnp.h"
 
+#if defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+
+int net_upnp_open_port(int port)
+{
+    (void)port;
+    return 0;
+}
+
+void net_upnp_close_port(int port)
+{
+    (void)port;
+}
+
+#else
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +29,7 @@ typedef SOCKET sock_t;
 #else
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -477,3 +493,5 @@ void net_upnp_close_port(int port)
 
     DebugLog("UPnP: port %d close requested\n", port);
 }
+
+#endif /* !__CELLOS_LV2__ */

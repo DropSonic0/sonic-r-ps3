@@ -9,6 +9,8 @@
  * practice is loop-to-start (back to byte 44); the .ADX path handles arbitrary
  * seeks by rewinding + re-decoding, so correctness never depends on that.
  */
+#if defined(SONICR_SDL) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
+
 #include "music_rwops.h"
 #include "adx.h"
 #include "adp.h"
@@ -310,3 +312,5 @@ SDL_RWops *MusicRW_OpenAdp(const char *path, uint32_t rate, uint16_t channels)
 
     return make_rw(m);
 }
+
+#endif /* SONICR_SDL && !PS3 */

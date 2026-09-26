@@ -13,6 +13,7 @@
 #define TER_TYPES_H
 
 #include <stdint.h>
+#include "win32_shim.h"
 
 /* -- Vertex table: 6 bytes per entry -- */
 typedef struct {
