@@ -66,9 +66,11 @@
       <OptimizationLevel>Level2</OptimizationLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>C:\sonic-r-ps3\source\ps3\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <FastMath>true</FastMath>
+      <RelaxAlias>RelaxAlias2</RelaxAlias>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libPSGLU.a;libPSGL.a;libgcm_cmd.a;libgcm_sys_stub.a;libresc_stub.a;libsysutil_game_stub.a;libsysutil_stub.a;libio_stub.a;libaudio_stub.a;libpthread.a;libsysmodule_stub.a;libm.a;libnet_stub.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libPSGLU.a;libPSGL.a;libPSGLcgc.a;libcgc.a;libgcm_cmd.a;libgcm_sys_stub.a;libresc_stub.a;libsysutil_game_stub.a;libsysutil_stub.a;libio_stub.a;libaudio_stub.a;libpthread.a;libsysmodule_stub.a;libfs_stub.a;libm.a;libnet_stub.a;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\usr\local\cell\target\ppu\lib\PSGL\RSX\ultra-opt;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

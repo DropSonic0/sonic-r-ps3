@@ -1419,12 +1419,15 @@ void AdjustRubberBandAI(void)
             countdown *= 2;
         }
 
-        /* Increment stuck timer */
-        if (sp->finishState == 0) {
-            if (g_trackId == TRACK_REGAL_RUIN) {                /* binary trackId 4 = Ruin */
-                sp->ring._unk_0x160 += 4;
-            }
-            else {
+		/* Increment stuck timer only when player is not moving forward */
+		if (sp->finishState == 0) {
+			if (sp->forwardSpeed > 0x1000 || sp->aiSpeed > 0x1000) {
+				sp->ring._unk_0x160 = 0;
+			}
+			else if (g_trackId == TRACK_REGAL_RUIN) {                /* binary trackId 4 = Ruin */
+				sp->ring._unk_0x160 += 4;
+			}
+			else {
                 sp->ring._unk_0x160 += 5;
             }
         }

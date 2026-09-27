@@ -11,6 +11,9 @@
 #if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
 #include <PSGL/psgl.h>
 #include <PSGL/psglu.h>
+#include <Cg/cg.h>
+#include <Cg/cgGL.h>
+#include "shader/addsigned_shaders.h"
 #elif defined(__APPLE__)
 #include <OpenGL/gl.h>
 #elif defined(_WIN32)
@@ -456,6 +459,103 @@ typedef struct {
 
 static PSGLVertex s_psglVerts[16];
 
+static CGcontext   s_cgContext;
+static CGprogram   s_cgVertexProgram;
+static CGprogram   s_cgFragmentProgram;
+static CGprofile   s_cgVertexProfile;
+static CGprofile   s_cgFragmentProfile;
+static CGparameter s_cgMVPParam;
+static int         s_cgInitialized = 0;
+static int         s_cgFailed = 0;
+
+static void R_AddSignedShader_Init(void)
+{
+	if (s_cgInitialized || s_cgFailed) return;
+
+	glFinish();
+	cgRTCgcInit();
+
+	s_cgContext = cgCreateContext();
+	if (!s_cgContext) {
+		printf("[Cg] ERROR: cgCreateContext failed\n");
+		s_cgFailed = 1;
+		return;
+	}
+
+	s_cgVertexProfile = cgGLGetLatestProfile(CG_GL_VERTEX);
+	s_cgVertexProgram = cgCreateProgram(s_cgContext, CG_SOURCE, addsigned_vshader,
+		s_cgVertexProfile, "vmain", NULL);
+	if (!s_cgVertexProgram) {
+		printf("[Cg] ERROR vertex: %s\n", cgGetLastListing(s_cgContext));
+		s_cgFailed = 1;
+		return;
+	}
+	cgGLLoadProgram(s_cgVertexProgram);
+	s_cgMVPParam = cgGetNamedParameter(s_cgVertexProgram, "modelViewProj");
+
+	s_cgFragmentProfile = cgGLGetLatestProfile(CG_GL_FRAGMENT);
+	s_cgFragmentProgram = cgCreateProgram(s_cgContext, CG_SOURCE, addsigned_fshader,
+		s_cgFragmentProfile, "fmain", NULL);
+	if (!s_cgFragmentProgram) {
+		printf("[Cg] ERROR fragment: %s\n", cgGetLastListing(s_cgContext));
+		s_cgFailed = 1;
+		return;
+	}
+	cgGLLoadProgram(s_cgFragmentProgram);
+
+	s_cgInitialized = 1;
+	printf("[Cg] AddSigned shader pair loaded OK\n");
+}
+
+static void R_DrawTriFan_AddSigned(const RenderVertex *v, int count)
+{
+	R_AddSignedShader_Init();
+	if (!s_cgInitialized) {
+		/* Shader failed to load — draw untextured white as a visible
+		* fallback so a broken shader path is obvious, not silently dim. */
+		return;
+	}
+
+	for (int i = 0; i < count; i++) {
+		float w = (v[i].rhw > 0.0f) ? (1.0f / v[i].rhw) : 1.0f;
+		s_psglVerts[i].x = v[i].sx * w;
+		s_psglVerts[i].y = v[i].sy * w;
+		s_psglVerts[i].z = v[i].sz * w;
+		s_psglVerts[i].w = w;
+
+		uint32_t argb = v[i].color;
+		s_psglVerts[i].a = (uint8_t)((argb >> 24) & 0xFF);
+		s_psglVerts[i].r = (uint8_t)((argb >> 16) & 0xFF);
+		s_psglVerts[i].g = (uint8_t)((argb >> 8) & 0xFF);
+		s_psglVerts[i].b = (uint8_t)((argb)& 0xFF);
+		s_psglVerts[i].u = v[i].u;
+		s_psglVerts[i].v = v[i].v;
+	}
+
+	cgGLBindProgram(s_cgVertexProgram);
+	cgGLEnableProfile(s_cgVertexProfile);
+	cgGLSetStateMatrixParameter(s_cgMVPParam, CG_GL_MODELVIEW_PROJECTION_MATRIX, CG_GL_MATRIX_IDENTITY);
+
+	cgGLBindProgram(s_cgFragmentProgram);
+	cgGLEnableProfile(s_cgFragmentProfile);
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(4, GL_FLOAT, sizeof(PSGLVertex), &s_psglVerts[0].x);
+	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(PSGLVertex), &s_psglVerts[0].r);
+	glTexCoordPointer(2, GL_FLOAT, sizeof(PSGLVertex), &s_psglVerts[0].u);
+
+	glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+	cgGLDisableProfile(s_cgFragmentProfile);
+	cgGLDisableProfile(s_cgVertexProfile);
+}
+
 void R_DrawTriFan(const RenderVertex *v, int count)
 {
     if (count < 3 || count > 16) {
@@ -463,6 +563,11 @@ void R_DrawTriFan(const RenderVertex *v, int count)
     }
 
     R_FlushState();
+
+	if (s_current.texEnv == R_TEXENV_ADD_SIGNED) {
+		R_DrawTriFan_AddSigned(v, count);
+		return;
+	}
 
     for (int i = 0; i < count; i++) {
         float w = (v[i].rhw > 0.0f) ? (1.0f / v[i].rhw) : 1.0f;
