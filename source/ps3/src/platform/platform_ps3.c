@@ -10,6 +10,8 @@
 #include <PSGL/psgl.h>
 #include <PSGL/psglu.h>
 #include <cell/sysmodule.h>
+#include <sysutil/sysutil_common.h>
+#include <cell/pad.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +26,76 @@
 #include "platform.h"
 #include "sonicr_types.h"
 #include "sonicr_globals.h"
+#include "pad_bits.h"
+#include "gamepad_buttons.h"
+
+#ifndef CELL_SYSMODULE_PAD
+#define CELL_SYSMODULE_PAD 0x000000000000000eULL
+#endif
+
+#ifndef CELL_PAD_OK
+#define CELL_PAD_OK 0
+#endif
+
+#ifndef CELL_PAD_MAX_PORT_NUM
+#define CELL_PAD_MAX_PORT_NUM 7
+#endif
+
+#ifndef CELL_PAD_BTN_OFFSET_DIGITAL1
+#define CELL_PAD_BTN_OFFSET_DIGITAL1 2
+#endif
+
+#ifndef CELL_PAD_BTN_OFFSET_DIGITAL2
+#define CELL_PAD_BTN_OFFSET_DIGITAL2 3
+#endif
+
+#ifndef CELL_PAD_BTN_OFFSET_ANALOG_LEFT_X
+#define CELL_PAD_BTN_OFFSET_ANALOG_LEFT_X 6
+#endif
+
+#ifndef CELL_PAD_BTN_OFFSET_ANALOG_LEFT_Y
+#define CELL_PAD_BTN_OFFSET_ANALOG_LEFT_Y 7
+#endif
+
+#ifndef CELL_PAD_CTRL_SELECT
+#define CELL_PAD_CTRL_SELECT   (1<<0)
+#define CELL_PAD_CTRL_L3       (1<<1)
+#define CELL_PAD_CTRL_R3       (1<<2)
+#define CELL_PAD_CTRL_START    (1<<3)
+#define CELL_PAD_CTRL_UP       (1<<4)
+#define CELL_PAD_CTRL_RIGHT    (1<<5)
+#define CELL_PAD_CTRL_DOWN     (1<<6)
+#define CELL_PAD_CTRL_LEFT     (1<<7)
+#endif
+
+#ifndef CELL_PAD_CTRL_L2
+#define CELL_PAD_CTRL_L2       (1<<0)
+#define CELL_PAD_CTRL_R2       (1<<1)
+#define CELL_PAD_CTRL_L1       (1<<2)
+#define CELL_PAD_CTRL_R1       (1<<3)
+#define CELL_PAD_CTRL_TRIANGLE (1<<4)
+#define CELL_PAD_CTRL_CIRCLE   (1<<5)
+#define CELL_PAD_CTRL_CROSS    (1<<6)
+#define CELL_PAD_CTRL_SQUARE   (1<<7)
+#endif
+
+#define MAX_GAMEPADS 4
+#define JOY_BUTTONS_PER_SLOT 80
+#define JOY_CFG_MAX 32
+
+extern unsigned char g_keyPressState[320];
+extern short g_joystickConfigWords[];
+extern char g_joystickSlots[4][282];
+extern char g_joystickDeviceNames[4][260];
+extern short g_joystickDeviceFlags[8];
+extern int g_initFeatureC;
+extern void SyncJoystickSlots(void);
+
+static int s_ps3PadsInitialized = 0;
+static CellPadData s_lastPadData[MAX_GAMEPADS];
+
+static GLuint s_ps3GlWidth = 640;
+static GLuint s_ps3GlHeight = 480;
 
 unsigned char s_keystate[256];
 
@@ -66,7 +138,7 @@ int platform_init(int width, int height, int fullscreen, const char *title)
                     PSGL_DEVICE_PARAMETERS_RESC_RATIO_MODE;
     params.bufferingMode = PSGL_BUFFERING_MODE_TRIPLE;
     params.colorFormat = GL_ARGB_SCE;
-    params.depthFormat = GL_NONE;
+    params.depthFormat = GL_DEPTH_COMPONENT24;
     params.multisamplingMode = GL_MULTISAMPLING_NONE_SCE;
     params.rescRatioMode = RESC_RATIO_MODE_FULLSCREEN;
 
@@ -74,7 +146,7 @@ int platform_init(int width, int height, int fullscreen, const char *title)
     PSGLdevice *device = psglCreateDeviceExtended(&params);
     if (!device) {
         printf("[PS3 PSGL] psglCreateDeviceExtended failed, trying GL_DEPTH_COMPONENT24...\n");
-        params.depthFormat = GL_DEPTH_COMPONENT24;
+        params.depthFormat = GL_NONE;
         device = psglCreateDeviceExtended(&params);
     }
     if (!device) {
@@ -85,6 +157,10 @@ int platform_init(int width, int height, int fullscreen, const char *title)
     GLuint glWidth = 0, glHeight = 0;
     psglGetDeviceDimensions(device, &glWidth, &glHeight);
     printf("[PS3 PSGL] Device created (%u x %u)\n", glWidth, glHeight);
+    if (glWidth > 0 && glHeight > 0) {
+        s_ps3GlWidth = glWidth;
+        s_ps3GlHeight = glHeight;
+    }
 
     PSGLcontext *context = psglCreateContext();
     if (!context) {
@@ -101,6 +177,13 @@ int platform_init(int width, int height, int fullscreen, const char *title)
 
 void platform_shutdown(void)
 {
+    if (s_ps3PadsInitialized) {
+        cellPadEnd();
+        cellSysmoduleUnloadModule(CELL_SYSMODULE_PAD);
+        s_ps3PadsInitialized = 0;
+        memset(s_lastPadData, 0, sizeof(s_lastPadData));
+    }
+
     PSGLcontext *context = psglGetCurrentContext();
     PSGLdevice *device = psglGetCurrentDevice();
     if (context) {
@@ -221,19 +304,189 @@ void platform_pump_events(void)
     /* PS3 event pump / pad poll stub */
 }
 
+static void platform_publish_joystick_name(int slot, const char *name)
+{
+    if (slot < 0 || slot >= 4) {
+        return;
+    }
+    char *dst = g_joystickDeviceNames[slot];
+    if (name == NULL) {
+        name = "PS3 Controller";
+    }
+    size_t n = strlen(name);
+    if (n > 258) {
+        n = 258;
+    }
+    memcpy(dst, name, n);
+    dst[n] = '\0';
+}
+
 int platform_init_gamepads(void)
 {
-    return 0;
+    if (!s_ps3PadsInitialized) {
+        cellSysmoduleLoadModule(CELL_SYSMODULE_PAD);
+        int ret = cellPadInit(CELL_PAD_MAX_PORT_NUM);
+        if (ret == CELL_PAD_OK) {
+            printf("[PS3 CELLPAD] cellPadInit(%d) successful\n", CELL_PAD_MAX_PORT_NUM);
+            s_ps3PadsInitialized = 1;
+            memset(s_lastPadData, 0, sizeof(s_lastPadData));
+        } else {
+            printf("[PS3 CELLPAD] cellPadInit(%d) failed: %d\n", CELL_PAD_MAX_PORT_NUM, ret);
+        }
+    }
+
+    int count = 0;
+    if (s_ps3PadsInitialized) {
+        for (int i = 0; i < MAX_GAMEPADS; i++) {
+            CellPadData padData;
+            memset(&padData, 0, sizeof(CellPadData));
+            if (cellPadGetData(i, &padData) == CELL_PAD_OK && padData.len > 0) {
+                s_lastPadData[i] = padData;
+            }
+            if (s_lastPadData[i].len > 0) {
+                platform_publish_joystick_name(i, "PlayStation(R)3 Controller");
+                g_joystickDeviceFlags[i] = GC_BUTTON_COUNT < JOY_SLOT_CFG_WORDS
+                                           ? GC_BUTTON_COUNT : JOY_SLOT_CFG_WORDS;
+                count++;
+            }
+        }
+    }
+
+    g_initFeatureC = count;
+    SyncJoystickSlots();
+    return count;
+}
+
+static int gamepad_button_held_ps3(uint16_t digital1, uint16_t digital2, int b)
+{
+    switch (b) {
+        case 0: return (digital2 & CELL_PAD_CTRL_CROSS) != 0;
+        case 1: return (digital2 & CELL_PAD_CTRL_CIRCLE) != 0;
+        case 2: return (digital2 & CELL_PAD_CTRL_SQUARE) != 0;
+        case 3: return (digital2 & CELL_PAD_CTRL_TRIANGLE) != 0;
+        case 4: return (digital2 & CELL_PAD_CTRL_L1) != 0;
+        case 5: return (digital2 & CELL_PAD_CTRL_R1) != 0;
+        case 6: return (digital2 & CELL_PAD_CTRL_L2) != 0;
+        case 7: return (digital2 & CELL_PAD_CTRL_R2) != 0;
+        case 8: return (digital1 & CELL_PAD_CTRL_START) != 0;
+        case 9: return (digital1 & CELL_PAD_CTRL_SELECT) != 0;
+        default: return 0;
+    }
 }
 
 int platform_poll_gamepads(unsigned short *joySlotState, int maxSlots)
 {
+    if (!s_ps3PadsInitialized) {
+        platform_init_gamepads();
+    }
+
+    int activeCount = 0;
+    int slotsToPoll = (maxSlots < MAX_GAMEPADS) ? maxSlots : MAX_GAMEPADS;
+
+    for (int i = 0; i < slotsToPoll; i++) {
+        unsigned char *pressBase = &g_keyPressState[i * JOY_BUTTONS_PER_SLOT];
+
+        if (!s_ps3PadsInitialized) {
+            if (joySlotState) joySlotState[i] = 0;
+            memset(pressBase, 0, JOY_BUTTONS_PER_SLOT);
+            continue;
+        }
+
+        CellPadData padData;
+        memset(&padData, 0, sizeof(CellPadData));
+        if (cellPadGetData(i, &padData) == CELL_PAD_OK && padData.len > 0) {
+            s_lastPadData[i] = padData;
+        }
+
+        if (s_lastPadData[i].len == 0) {
+            if (joySlotState) joySlotState[i] = 0;
+            memset(pressBase, 0, JOY_BUTTONS_PER_SLOT);
+            continue;
+        }
+
+        activeCount++;
+        platform_publish_joystick_name(i, "PlayStation(R)3 Controller");
+        g_joystickDeviceFlags[i] = 10;
+
+        uint16_t digital1 = (uint16_t)s_lastPadData[i].button[CELL_PAD_BTN_OFFSET_DIGITAL1];
+        uint16_t digital2 = (uint16_t)s_lastPadData[i].button[CELL_PAD_BTN_OFFSET_DIGITAL2];
+
+        unsigned short bits = 0;
+
+        /* Left analog stick deflection */
+        int stickX = (int)(s_lastPadData[i].button[CELL_PAD_BTN_OFFSET_ANALOG_LEFT_X] & 0xFF) - 128;
+        int stickY = (int)(s_lastPadData[i].button[CELL_PAD_BTN_OFFSET_ANALOG_LEFT_Y] & 0xFF) - 128;
+
+        if (stickX < -50) {
+            bits |= PAD_LEFT;
+        }
+        if (stickX > 50) {
+            bits |= PAD_RIGHT;
+        }
+        if (stickY < -50) {
+            bits |= PAD_UP;
+        }
+        if (stickY > 50) {
+            bits |= PAD_DOWN;
+        }
+
+        /* Digital D-Pad directions */
+        if (digital1 & CELL_PAD_CTRL_LEFT)  bits |= PAD_LEFT;
+        if (digital1 & CELL_PAD_CTRL_RIGHT) bits |= PAD_RIGHT;
+        if (digital1 & CELL_PAD_CTRL_UP)    bits |= PAD_UP;
+        if (digital1 & CELL_PAD_CTRL_DOWN)  bits |= PAD_DOWN;
+
+        /* System buttons */
+        if (digital1 & CELL_PAD_CTRL_START)  bits |= PAD_START;
+        if (digital1 & CELL_PAD_CTRL_SELECT) bits |= PAD_ACCEL;
+
+        /* Face buttons & shoulders */
+        if (digital2 & CELL_PAD_CTRL_CROSS)    bits |= (PAD_JUMP | 0x0200);   /* 0x0600: Jump + Confirm bit */
+        if (digital2 & CELL_PAD_CTRL_CIRCLE)   bits |= PAD_ACCEL;             /* 0x0100: Accel + Back bit */
+        if (digital2 & CELL_PAD_CTRL_SQUARE)   bits |= (PAD_JUMP | PAD_ACCEL);/* 0x0500: Jump + Accel */
+        if (digital2 & CELL_PAD_CTRL_TRIANGLE) bits |= PAD_CAMERA;            /* 0x0040: Camera */
+        if (digital2 & CELL_PAD_CTRL_L1)       bits |= PAD_DRIFTL;
+        if (digital2 & CELL_PAD_CTRL_R1)       bits |= PAD_DRIFTR;
+        if (digital2 & CELL_PAD_CTRL_L2)       bits |= PAD_DRIFTL;
+        if (digital2 & CELL_PAD_CTRL_R2)       bits |= PAD_DRIFTR;
+
+        /* Buttons mapping & key press state */
+        const short *slotCfg = (const short *)&g_joystickSlots[i][0x104];
+        for (int b = 0; b < 10; b++) {
+            int held = gamepad_button_held_ps3(digital1, digital2, b);
+            pressBase[b] = held ? 0x80 : 0x00;
+            if (!held) continue;
+
+            short cfg = 0;
+            if (b < JOY_SLOT_CFG_WORDS && slotCfg[b] != 0) {
+                cfg = slotCfg[b];
+            } else if (b < JOY_CFG_MAX) {
+                cfg = g_joystickConfigWords[b];
+            }
+            bits |= (unsigned short)cfg;
+        }
+
+        for (int b = 10; b < JOY_BUTTONS_PER_SLOT; b++) {
+            pressBase[b] = 0x00;
+        }
+
+        if (joySlotState) {
+            joySlotState[i] = bits;
+        }
+    }
+
     if (joySlotState) {
-        for (int i = 0; i < maxSlots; i++) {
+        for (int i = slotsToPoll; i < maxSlots; i++) {
             joySlotState[i] = 0;
         }
     }
-    return 0;
+
+    for (int i = slotsToPoll; i < MAX_GAMEPADS; i++) {
+        memset(&g_keyPressState[i * JOY_BUTTONS_PER_SLOT], 0, JOY_BUTTONS_PER_SLOT);
+    }
+
+    g_initFeatureC = activeCount;
+    return activeCount;
 }
 
 uint32_t platform_get_time_ms(void)
@@ -267,8 +520,8 @@ void platform_gl_swap(void)
 
 void platform_get_drawable_size(int *w, int *h)
 {
-    if (w) *w = 640;
-    if (h) *h = 480;
+    if (w) *w = (s_ps3GlWidth > 0) ? (int)s_ps3GlWidth : 640;
+    if (h) *h = (s_ps3GlHeight > 0) ? (int)s_ps3GlHeight : 480;
 }
 
 int platform_net_init(void)

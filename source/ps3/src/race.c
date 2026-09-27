@@ -37,15 +37,8 @@ void ComputeRacePositions(int playerIdx)
         return;
     }
 
-    if (playerIdx < 0 || playerIdx >= MAX_PLAYERS) {
-        return;
-    }
-
     Player *players = (Player *)g_playerBase;
     int playerSlot = g_raceOrder[playerIdx];
-    if (playerSlot < 0 || playerSlot >= MAX_PLAYERS) {
-        return;
-    }
     Player *player = &players[playerSlot];
 
     /* Skip if player has finished (completed 3 laps) */

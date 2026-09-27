@@ -197,7 +197,7 @@ void SpawnFootShadows(void)
             /* Binary reads 32-bit pointer from player+0x9C. On 64-bit,
              * the frame stream pointer is in g_animDataPtrs[] side storage. */
             const short *animPtr = g_animDataPtrs[i];
-            if (animPtr == NULL || (uintptr_t)animPtr < 0x10000) {
+            if (animPtr == NULL) {
                 continue;
             }
             int frameVal = (int)(short)*animPtr;

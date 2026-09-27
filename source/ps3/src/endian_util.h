@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 
-#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#if (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) || defined(SONICR_PS3)
 #define SONICR_BIG_ENDIAN 1
 #else
 #define SONICR_BIG_ENDIAN 0

@@ -35,10 +35,7 @@
 
 #ifdef SONICR_SOFT_RENDER
 
-#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
-#include <PSGL/psgl.h>
-#include <PSGL/psglu.h>
-#elif defined(__APPLE__)
+#ifdef __APPLE__
 #include <OpenGL/gl.h>
 #elif defined(_WIN32)
 #include <GL/glew.h>

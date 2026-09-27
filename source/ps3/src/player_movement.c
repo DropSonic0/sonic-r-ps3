@@ -766,9 +766,6 @@ static void SlopeMovement(Player *player)
  */
 static void LoopGridInterpolate(Player *player, void *loopEntry)
 {
-    if (loopEntry == NULL || g_terUnknown74 == NULL) {
-        return;
-    }
     char *ep = (char *)loopEntry;
 
     /* Cell stride from the entry header (binary 0x4D5F14): both fields are the
@@ -776,11 +773,11 @@ static void LoopGridInterpolate(Player *player, void *loopEntry)
      * clamp the remainder is forced to cellStride - 1 (below). */
     int heightField = *(short *)(ep + 0xE);
     int firstField = *(short *)(ep + 2);  /* high word of first dword */
-    if (firstField <= 0) {
+    if (firstField == 0) {
         return;          /* guard: binary divides unconditionally */
     }
     int cellStride = (heightField << 12) / firstField;
-    if (cellStride <= 0) {
+    if (cellStride == 0) {
         return;          /* guard: binary divides unconditionally */
     }
 
@@ -790,17 +787,14 @@ static void LoopGridInterpolate(Player *player, void *loopEntry)
 
     /* Compute Z cell index and remainder from loop position Z */
     int loopZ = player->loopLocalZ;
-    int zCellIdx;
+    int zCellIdx = loopZ / cellStride;
     int zRemainder;
 
-    if (loopZ < 0) {
-        zCellIdx = 0;
-        zRemainder = 0;
-    } else if (firstField <= loopZ / cellStride) {
+    /* Clamp to valid range — binary forces remainder to cellStride-1 */
+    if (firstField <= zCellIdx) {
         zCellIdx = firstField - 1;
         zRemainder = cellStride - 1;
     } else {
-        zCellIdx = loopZ / cellStride;
         zRemainder = loopZ % cellStride;
     }
 
@@ -810,12 +804,7 @@ static void LoopGridInterpolate(Player *player, void *loopEntry)
     /* Compute fractional positions: (remainder * 0x1000) / cellStride */
     int loopX = player->loopLocalX;
     int zFrac = (int)((long long)zRemainder * 0x1000 / cellStride);
-    int xFrac = 0;
-    if (widthScaled > 0) {
-        xFrac = (int)((long long)loopX * 0x1000 / widthScaled);
-        if (xFrac < 0) xFrac = 0;
-        if (xFrac > 0x1000) xFrac = 0x1000;
-    }
+    int xFrac = (int)((long long)loopX * 0x1000 / widthScaled);
 
     /* Look up vertex data from g_terUnknown74.
      * Vertex index = entry[0] (short) + zCellIdx
@@ -904,10 +893,6 @@ static void UpdateLoopMovement(Player *player)
 
     /* Compute loop entry pointer from surface index */
     int surfIdx = player->_unk_0x94;
-    if (g_terLoopTable == NULL || surfIdx < 0 || surfIdx >= g_terLoopCount) {
-        player->loopMode = 0;
-        return;
-    }
     /* Stride = (idx*4 - idx)*4 - idx = idx*11; *2 = idx*22 = idx*0x16 */
     int entryOff = ((surfIdx * 4 - surfIdx) * 4 - surfIdx) * 2;
     char *loopEntry = (char *)g_terLoopTable + entryOff;
@@ -1002,7 +987,7 @@ static void UpdateLoopMovement(Player *player)
         int velZ = player->loopVelZ;
 
         /* Compute rotation from surface angle */
-        int surfAngle = (*(short *)(loopEntry + 0x14)) & 0xFFF;
+        int surfAngle = *(short *)(loopEntry + 0x14);
         int sinA = g_sinTable[surfAngle] >> 2;
         int cosA = g_cosTable[surfAngle] >> 2;
 
@@ -1087,9 +1072,6 @@ static void UpdateLoopOrientation(Player *player)
 {
     /* Compute loop entry and vertex pointer */
     int surfIdx = player->_unk_0x94;
-    if (g_terLoopTable == NULL || g_terUnknown74 == NULL || surfIdx < 0 || surfIdx >= g_terLoopCount) {
-        return;
-    }
     int entryOff = ((surfIdx * 4 - surfIdx) * 4 - surfIdx) * 2;
     char *loopEntry = (char *)g_terLoopTable + entryOff;
 
@@ -1269,7 +1251,7 @@ static void PositionUpdate(Player *player)
         int rotLat = (projLat * dCos + projFwd * dSin) / 4096;  /* eax, stored [esp] */
 
         /* 0x4d5441..0x4d5462 — third rotation: yaw (NOT negated this time) */
-        unsigned int yaw = (unsigned int)player->angleYaw & 0xFFF;
+        unsigned int yaw = (unsigned int)player->angleYaw;
         int pSin = g_sinTable[yaw] >> 2;           /* 0x92568c — esi */
         int pCos = g_cosTable[yaw] >> 2;         /* 0x92668c — [esp+8] */
 
