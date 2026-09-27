@@ -360,6 +360,7 @@
     <ClCompile Include="..\..\src\vehicle_physics.c" />
     <ClCompile Include="..\..\src\view_matrix.c" />
     <ClCompile Include="..\..\src\weather.c" />
+    <ClCompile Include="..\..\src\sound\sound_ps3.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\collect_effect.h" />

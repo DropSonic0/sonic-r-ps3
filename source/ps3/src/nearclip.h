@@ -94,9 +94,9 @@ extern int g_cpuClipEdge;
  *                         ground when jumping — so it is the LAST to drop if
  *                         split-screen ever needs trimming again.
  * ------------------------------------------------------------------------- */
-#define SPLIT_FOOT_SHADOWS    1
-#define SPLIT_PICKUP_SHADOWS  1
-#define SPLIT_CHAR_SHADOW     1
+#define SPLIT_FOOT_SHADOWS    (g_numHumans <= 2)
+#define SPLIT_PICKUP_SHADOWS  (g_numHumans <= 2)
+#define SPLIT_CHAR_SHADOW     (g_numHumans <= 3)
 
 /* True when this system's shadows should be drawn for the current viewport.
  * Split-screen is g_scissorEdge != SCISSOR_NONE. */

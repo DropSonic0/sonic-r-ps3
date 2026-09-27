@@ -66,8 +66,8 @@
       <OptimizationLevel>Level2</OptimizationLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>C:\sonic-r-ps3\source\ps3\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <FastMath>true</FastMath>
-      <RelaxAlias>RelaxAlias2</RelaxAlias>
+      <FastMath>false</FastMath>
+      <RelaxAlias>Default</RelaxAlias>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libPSGLU.a;libPSGL.a;libPSGLcgc.a;libcgc.a;libgcm_cmd.a;libgcm_sys_stub.a;libresc_stub.a;libsysutil_game_stub.a;libsysutil_stub.a;libio_stub.a;libaudio_stub.a;libpthread.a;libsysmodule_stub.a;libfs_stub.a;libm.a;libnet_stub.a;%(AdditionalDependencies)</AdditionalDependencies>
@@ -421,6 +421,7 @@
     <ClCompile Include="..\..\src\sound\replay_voice.c" />
     <ClCompile Include="..\..\src\sound\sfx_sdl.c" />
     <ClCompile Include="..\..\src\sound\sound.c" />
+    <ClCompile Include="..\..\src\sound\sound_ps3.c" />
     <ClCompile Include="..\..\src\texture.c" />
     <ClCompile Include="..\..\src\title_render.c" />
     <ClCompile Include="..\..\src\track_anim.c" />
