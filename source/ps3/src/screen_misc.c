@@ -427,6 +427,30 @@ static const int s_optPageItems[7][2] = {
 	{ 32, 36 },   /* 6: Controls */
 };
 
+static int GetOptionItemSlotIndex(int pageIndex, int targetItem)
+{
+	int start = s_optPageItems[pageIndex][0];
+	int end = s_optPageItems[pageIndex][1];
+	int slot = 0;
+	for (int i = start; i <= end; i++) {
+		if (IsOptionItemDisabled(i)) continue;
+		if (i == targetItem) return slot;
+		slot++;
+	}
+	return slot;
+}
+
+static int GetOptionActiveItemCount(int pageIndex)
+{
+	int start = s_optPageItems[pageIndex][0];
+	int end = s_optPageItems[pageIndex][1];
+	int count = 0;
+	for (int i = start; i <= end; i++) {
+		if (!IsOptionItemDisabled(i)) count++;
+	}
+	return count;
+}
+
 /* =====================================================================
 * InitOptionsMenuPage — 0x00493820 — 140 bytes
 * Initializes an options menu page from a ROM page descriptor table.
@@ -445,19 +469,25 @@ void InitOptionsMenuPage(int pageIndex, int basePos)  /* EAX, EDX */
 
 	g_optMenuCursor = basePos + start;
 	g_optMenuMaxItem = length;
+	g_optMenuSelected = start;
 
-	int diff = length - start;                              /* eax after sub */
-	int count = diff + 1;                                   /* edx = eax + ecx(1) */
-	g_optMenuItemCount = count;
+	int activeCount = GetOptionActiveItemCount(pageIndex);
+	g_optMenuItemCount = activeCount;
 
-	/* Binary centering: shl eax,2 + shl edx,4 then sar 1, sub from 0x8E */
-	int totalWidth = diff * 4 + count * 16;                 /* 0x493860-0x493866 */
-	int center = 0x8E - (totalWidth + (totalWidth >> 31)) / 2; /* abs + sar 1 */
+	int diff = (activeCount > 0) ? (activeCount - 1) : 0;
+	int totalWidth = diff * 4 + activeCount * 16;
+	int center = 0x8E - (totalWidth + (totalWidth >> 31)) / 2;
 	g_optMenuCenter = center;
 
-	/* Compute scroll position: center + (position - start) * 20 */
-	int scrollPos = center + (g_optMenuCursor - start) * 20;
-	g_optMenuSelected = start;                              /* 0x493899: [0x925294] = ebx (= start) */
+	if (IsOptionItemDisabled(g_optMenuCursor)) {
+		OptionsMenuScrollDown();
+		if (IsOptionItemDisabled(g_optMenuCursor)) {
+			OptionsMenuScrollUp();
+		}
+	}
+
+	int slotIdx = GetOptionItemSlotIndex(pageIndex, g_optMenuCursor);
+	int scrollPos = center + slotIdx * 20;
 	g_optMenuScrollTgt = scrollPos;
 	g_optMenuScrollCur = scrollPos;
 }
@@ -512,19 +542,24 @@ static void OptionsMenuScrollUp(void)
 			skip = 1;
 		}
 
-		/* The binary (0x493960 / 0x493977: cmp edx, 1) also skips items 0x18 /
-		* 0x1c / 0x1d when g_renderMode == RENDER_D3D — those are the
-		* DirectDraw-era software toggles, hidden when hardware is driving.
-		* We run RENDER_SOFT, so the gate is never true and the rows stay. */
+		/* Skip disabled/hidden items */
+		if (IsOptionItemDisabled(cursor)) {
+			skip = 1;
+		}
 
 		if (skip) {
+			if (g_optMenuCursor <= g_optMenuSelected) {
+				break;
+			}
 			g_optMenuCursor--;
-			g_optMenuScrollTgt -= 0x14;
 		}
 		else {
 			break;
 		}
 	}
+
+	int slotIdx = GetOptionItemSlotIndex(g_optCurrentPage, g_optMenuCursor);
+	g_optMenuScrollTgt = g_optMenuCenter + slotIdx * 20;
 }
 
 /* =====================================================================
@@ -575,28 +610,31 @@ static void OptionsMenuScrollDown(void)
 			skip = 1;
 		}
 
-		/* The binary (0x493960 / 0x493977: cmp edx, 1) also skips items 0x18 /
-		* 0x1c / 0x1d when g_renderMode == RENDER_D3D — those are the
-		* DirectDraw-era software toggles, hidden when hardware is driving.
-		* We run RENDER_SOFT, so the gate is never true and the rows stay. */
+		/* Skip disabled/hidden items */
+		if (IsOptionItemDisabled(cursor)) {
+			skip = 1;
+		}
 
 		if (skip) {
+			if (g_optMenuCursor >= g_optMenuMaxItem) {
+				break;
+			}
 			g_optMenuCursor++;
-			g_optMenuScrollTgt += 0x14;
 		}
 		else {
 			break;
 		}
 	}
+
+	int slotIdx = GetOptionItemSlotIndex(g_optCurrentPage, g_optMenuCursor);
+	g_optMenuScrollTgt = g_optMenuCenter + slotIdx * 20;
 }
 
 /* Graphics page (page 3, items 23-30) rows this port does not implement:
 * Resolution (23), Color (24), Interlace (25), Window (27), Track Shading
 * (28) and Alpha Blending (29). The window and pixel format are settled
 * outside the game, and the last two are unconditionally on in the D3D/GL/PVR
-* path. These rows draw empty and ignore left/right; the cursor still stops
-* on them so the page keeps its original eight-row spacing.
-* DELIBERATE DIVERGENCE — all platforms. */
+* path. These rows draw empty and ignore left/right. */
 static int IsDisabledGraphicsItem(int itemIndex)
 {
 	switch (itemIndex) {
@@ -614,6 +652,24 @@ static int IsDisabledGraphicsItem(int itemIndex)
 	}
 }
 
+static int IsOptionItemDisabled(int itemIndex)
+{
+	if (IsDisabledGraphicsItem(itemIndex)) {
+		return 1;
+	}
+#if defined(SONICR_DC) || defined(SONICR_PS3)
+	if (itemIndex == 6) { /* Exit to Windows */
+		return 1;
+	}
+#endif
+#if defined(SONICR_PS3)
+	if (itemIndex == 4) { /* Controls */
+		return 1;
+	}
+#endif
+	return 0;
+}
+
 /* =====================================================================
 * DrawOptionItem — 0x0049257C — 2166 bytes
 * Draws one option menu item: label sprite + value indicator.
@@ -624,19 +680,9 @@ static int IsDisabledGraphicsItem(int itemIndex)
 * ===================================================================== */
 static void DrawOptionItem(int xPos, int itemIndex)
 {
-	if (IsDisabledGraphicsItem(itemIndex)) {
+	if (IsOptionItemDisabled(itemIndex)) {
 		return;
 	}
-
-#if defined(SONICR_DC) || defined(SONICR_PS3)
-	/* Item 6 (page 0) is "Exit to Windows". On console there is no host desktop to
-	* return to, so the row is drawn empty — the layout and cursor spacing are
-	* kept intact and the cursor still stops here. Selecting it is a no-op
-	* (see the OptionsMenuScreen select handler). */
-	if (itemIndex == 6) {
-		return;
-	}
-#endif
 
 	const int *info = s_optItemInfo[itemIndex]; /* 5 ints: tpage, srcX, srcY, width, hasValue */
 	int tpageOff = info[0];
@@ -2110,16 +2156,19 @@ int OptionsMenuScreen(void)
 		}
 		else {
 			/* Normal menu — items + cursor */
-			int count = g_optMenuItemCount;
+			int start = s_optPageItems[g_optCurrentPage][0];
+			int end = s_optPageItems[g_optCurrentPage][1];
 			int xOff = 0;
-			for (int i = 0; i < count; i++) {
-				int itemIdx = g_optMenuSelected + i;
+			for (int itemIdx = start; itemIdx <= end; itemIdx++) {
+				if (IsOptionItemDisabled(itemIdx)) {
+					continue;
+				}
 				int itemX = g_optMenuCenter + xOff;
 				DrawOptionItem(itemX, itemIdx);
 				xOff += 0x14;
 			}
 
-			int selItem = g_optMenuSelected;
+			int selItem = g_optMenuCursor;
 			int itemWidth = s_optItemInfo[selItem][3];
 			int scrollPos = g_optMenuScrollCur;
 			int cursorX = 0x140 - itemWidth * 2 - 4 + optXOff;

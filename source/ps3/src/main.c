@@ -1395,6 +1395,13 @@ race_start:
 		g_splashPrevState = g_interlaceMode;
 		if (g_netSessionActive == 0 && g_isNetworkGame == 0) {
 			UpdatePerPlayerInput();
+			if (g_demoMode == DEMO_TITLE && g_introCountdown == 0 &&
+				(g_ghostReadIndex % 30) == 0) {
+				Player *p = &g_playerBase[0];
+				printf("D idx=%d pos=%d,%d,%d spd=%d yaw=%d rng=%d\n",
+					g_ghostReadIndex, p->posX, p->posY, p->posZ,
+					p->forwardSpeed, p->angleYaw & 0xFFF, g_randomRingIdx);
+			}
 		}
 		/* [0x4CC9B4]: debug track/variant-select cheat — deliberately not
 		* ported (debug keys unwired; the intro-countdown reset it was mistranslated as

@@ -282,52 +282,28 @@ void LoadAI(void)
     }
 #endif
 
-    /* Section 3: 0xE00 collision tiles (1 byte each) */
-#ifdef SONICR_DC
-    fRead(aiData, 1, 0xE00, fp);
-    aiData += 0xE00;
-#else
-    for (i = 0; i < 0xE00; i++) {
-        int b;
-        fRead(&b, 1, 1, fp);
-        *aiData++ = (unsigned char)b;
-    }
-#endif
+	/* Section 3: 0xE00 collision tiles (1 byte each) */
+	fRead(aiData, 1, 0xE00, fp);
+	aiData += 0xE00;
 
-    /* Section 4: 0x400 visibility tiles (1 byte each) */
-#ifdef SONICR_DC
-    fRead(aiData, 1, 0x400, fp);
-    aiData += 0x400;
-#else
-    for (i = 0; i < 0x400; i++) {
-        int b;
-        fRead(&b, 1, 1, fp);
-        *aiData++ = (unsigned char)b;
-    }
-#endif
+	/* Section 4: 0x400 visibility tiles (1 byte each) */
+	fRead(aiData, 1, 0x400, fp);
+	aiData += 0x400;
 
-    /* Section 5: Variable tail (per-track) */
-    int tailSize;
-    if (g_trackId == TRACK_RESORT_ISLAND) {
-        tailSize = 0x320;
-    }
-    else if (g_trackId == TRACK_RADIANT_EMERALD) {
-        tailSize = 0xA0;
-    }
-    else {
-        tailSize = 0x280;
-    }
+	/* Section 5: Variable tail (per-track) */
+	int tailSize;
+	if (g_trackId == TRACK_RESORT_ISLAND) {
+		tailSize = 0x320;
+	}
+	else if (g_trackId == TRACK_RADIANT_EMERALD) {
+		tailSize = 0xA0;
+	}
+	else {
+		tailSize = 0x280;
+	}
 
-#ifdef SONICR_DC
-    fRead(aiData, 1, (size_t)tailSize, fp);
-    aiData += tailSize;
-#else
-    for (i = 0; i < tailSize; i++) {
-        int b;
-        fRead(&b, 1, 1, fp);
-        *aiData++ = (unsigned char)b;
-    }
-#endif
+	fRead(aiData, 1, (size_t)tailSize, fp);
+	aiData += tailSize;
 
     fClose(fp);
 
