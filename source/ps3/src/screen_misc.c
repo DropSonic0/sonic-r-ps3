@@ -1534,6 +1534,7 @@ int OptionsMenuScreen(void)
 								 if (v != g_optCfg_470) {
 									 g_optCfg_470 = v;
 									 ApplyViewportGeometry();
+									 LoadTPageRGB(g_uiTexPage + 1, PATH_MENU_OPTIONS0);
 									 PlaySoundEffect(1, 0, 0);
 									 lastTime = timeGetTime() / 1000;
 								 }
@@ -3684,6 +3685,13 @@ static void RenderCreditsText(int step)                          /* 0x4DAB24 */
 	int glyphCount = 0;                                         /* esi */
 	int firstLineProcessed = 0;                                 /* [ebp-0x64] */
 
+	int creditsXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		creditsXOff = g_screenWidth / 6;
+	}
+#endif
+
 	const char *text = s_creditsTextStrings[step];               /* [ebp-0x1C], also ecx */
 	const char *lineStart = text;
 	int lineHeight = s_creditsLineHeight[fontBlock];             /* [ebp-0x2C] */
@@ -3696,7 +3704,7 @@ static void RenderCreditsText(int step)                          /* 0x4DAB24 */
 
 		if (ch == '@') {
 			/* 0x4DAB78: '@' = line break/control */
-			int screenX = s_creditsScreenX[step];                /* [ebp-0x60] */
+			int screenX = s_creditsScreenX[step] + creditsXOff;  /* [ebp-0x60] */
 			int xStart = screenX - (charWidthAccum / 2);       /* centered, [ebp-0x20] */
 
 			/* Render glyphs for this line if we have chars and this isn't the first '@' */
@@ -3787,7 +3795,7 @@ static void RenderCreditsText(int step)                          /* 0x4DAB24 */
 	}
 
 	/* Position computation (0x4DAD6A-0x4DADAF) */
-	int posX = s_creditsScreenX[step];                           /* [ebp-0x5C] */
+	int posX = s_creditsScreenX[step] + creditsXOff;             /* [ebp-0x5C] */
 	int posY = 0xF0 - (lineWidthAccum / 2);                    /* [ebp-0x58], Y=0xF0 constant */
 
 	int portraitYStart = posY;                                  /* [ebp-0x28] adjusted */
@@ -3827,7 +3835,7 @@ static void RenderCreditsText(int step)                          /* 0x4DAB24 */
 
 	/* Step 0x24 special: "developed by" decorative quads (0x4DAF17-0x4DAF8B) */
 	if (step == 0x24) {
-		int specialX = s_creditsScreenX[step];
+		int specialX = s_creditsScreenX[step] + creditsXOff;
 		/* Top quad: logo area — binary push: color,0x48,0x70,0xA8,0x69,tp,0x90,0xE0,depth */
 		DrawTexturedQuad(specialX - 0x70, 0x30,
 			0x44FA0000, 0xE0, 0x90,
@@ -4020,6 +4028,13 @@ static int RunCreditsStep(int step)                              /* 0x4DB2C8 */
 	int texOffX;                                                /* [ebp-0x30] */
 	int texOffY;                                                /* [ebp-0x3C] */
 
+	int creditsXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		creditsXOff = g_screenWidth / 6;
+	}
+#endif
+
 	/* 0x4DB2D9: read screen X from ROM position table */
 	int screenX = s_creditsScreenX[step];                        /* [ebp-0x44] */
 
@@ -4135,7 +4150,7 @@ static int RunCreditsStep(int step)                              /* 0x4DB2C8 */
 
 	/* 0x4DB595: texture quad position offsets */
 	int quadOffY = texPosY - 0x80;                              /* [ebp-0x2C] */
-	int quadOffX = texPosX - 0x80;                              /* [ebp-0x28] */
+	int quadOffX = texPosX - 0x80 + creditsXOff;                /* [ebp-0x28] */
 
 	/* Main loop (0x4DB5AB-0x4DB9F5) */
 	while (1) {

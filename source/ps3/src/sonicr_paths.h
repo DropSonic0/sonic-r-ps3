@@ -1,12 +1,12 @@
 /**
- * sonicr_paths.h — File path definitions
- *
- * All game data file paths in one place. Paths use forward slashes
- * and ALL CAPS filenames to match the original game data layout.
- *
- * DATA_DIR is the base directory containing the game data folders
- * (GENERAL, ISLAND, CITY, RUIN, FACTORY, EMERALD, SAVE, GHOST, AI).
- */
+* sonicr_paths.h — File path definitions
+*
+* All game data file paths in one place. Paths use forward slashes
+* and ALL CAPS filenames to match the original game data layout.
+*
+* DATA_DIR is the base directory containing the game data folders
+* (GENERAL, ISLAND, CITY, RUIN, FACTORY, EMERALD, SAVE, GHOST, AI).
+*/
 
 #ifndef SONICR_PATHS_H
 #define SONICR_PATHS_H
@@ -25,8 +25,8 @@
 #define PATH_GENERAL_RAW        PATH_GENERAL "SONICR.RAW"
 
 /* Port addition, DC only — 32x32 RGB565 tile repeated across the bottom
- * scanline row in the 448-line split-screen modes. Uppercase so it survives
- * ISO9660 on a burned or emulated image. */
+* scanline row in the 448-line split-screen modes. Uppercase so it survives
+* ISO9660 on a burned or emulated image. */
 #define PATH_PAD448             DATA_DIR SEP "PAD448.TEX"
 
 /* Per-track data directories */
@@ -98,6 +98,20 @@
 #define PATH_END_SSONIC         PATH_END "SSONIC.RAW"
 #define PATH_END_THE_END        PATH_END "THE_END.RAW"
 
+/* Widescreen variants (16:9) */
+#define PATH_END_WIDE_EMERALDS  PATH_END "WIDE_EMERALDS.RAW"
+#define PATH_END_WIDE_SONIC     PATH_END "WIDE_SONIC.RAW"
+#define PATH_END_WIDE_TAILS     PATH_END "WIDE_TAILS.RAW"
+#define PATH_END_WIDE_KNUCKLES  PATH_END "WIDE_KNUCKLES.RAW"
+#define PATH_END_WIDE_AMY       PATH_END "WIDE_AMY.RAW"
+#define PATH_END_WIDE_ROBOTNIK  PATH_END "WIDE_ROBOTNIK.RAW"
+#define PATH_END_WIDE_MSONIC    PATH_END "WIDE_MSONIC.RAW"
+#define PATH_END_WIDE_DTAILS    PATH_END "WIDE_DTAILS.RAW"
+#define PATH_END_WIDE_MKNUCK    PATH_END "WIDE_MKNUCK.RAW"
+#define PATH_END_WIDE_MROBOT    PATH_END "WIDE_MROBOT.RAW"
+#define PATH_END_WIDE_SSONIC    PATH_END "WIDE_SSONIC.RAW"
+#define PATH_END_WIDE_THE_END   PATH_END "WIDE_THE_END.RAW"
+
 /* AI pathfinding data — from strings in SONICR.EXE: "ai\aistuffi.bin" */
 #define PATH_AI_ISLAND          DATA_DIR SEP "AI" SEP "AISTUFFI.BIN"
 #define PATH_AI_CITY            DATA_DIR SEP "AI" SEP "AISTUFFC.BIN"
@@ -135,26 +149,26 @@
 #define PATH_PLAYER01_RAW       PATH_GENERAL "PLAYER01.RAW"
 
 /* Environment map textures (128×128 RGB).
- *
- * SONICR.RAW is the default env-map loaded once at startup
- * (binary 0x470805 → game_loop.c:517) into g_tpageParallax2 at (0,0).
- *
- * NO1..NO5.RAW are the per-TRACK env-map tiles (128x128 RGB), loaded
- * into g_tpageParallax1 at (0,0,128,128) by each track's Init function:
- *   InitIsland  0x004736e3 -> NO1.RAW
- *   InitCity    0x00473df8 -> NO2.RAW
- *   InitRuin    0x004744e0 -> NO3.RAW
- *   InitFactory 0x00474bc8 -> NO4.RAW
- *   InitEmerald 0x00474fb8 -> NO5.RAW
- * 3D objects on each track (starting-line flags, boost-trail ribbon,
- * shiny decorations) sample this 128x128 region via their mesh UVs.
- *
- * A prior translator's note said these were "per-finish-position"
- * gold/silver/bronze/etc. overlays. That interpretation came from
- * ResultsScreen (binary 0x4c750e..0x4c7755) which RE-BINDS the same
- * five files into g_tpageParallax2 indexed by (short)g_racePlacement,
- * so the results-screen trophy shimmer changes color with placement.
- * The files themselves are per-track, not per-finish-position. */
+*
+* SONICR.RAW is the default env-map loaded once at startup
+* (binary 0x470805 → game_loop.c:517) into g_tpageParallax2 at (0,0).
+*
+* NO1..NO5.RAW are the per-TRACK env-map tiles (128x128 RGB), loaded
+* into g_tpageParallax1 at (0,0,128,128) by each track's Init function:
+*   InitIsland  0x004736e3 -> NO1.RAW
+*   InitCity    0x00473df8 -> NO2.RAW
+*   InitRuin    0x004744e0 -> NO3.RAW
+*   InitFactory 0x00474bc8 -> NO4.RAW
+*   InitEmerald 0x00474fb8 -> NO5.RAW
+* 3D objects on each track (starting-line flags, boost-trail ribbon,
+* shiny decorations) sample this 128x128 region via their mesh UVs.
+*
+* A prior translator's note said these were "per-finish-position"
+* gold/silver/bronze/etc. overlays. That interpretation came from
+* ResultsScreen (binary 0x4c750e..0x4c7755) which RE-BINDS the same
+* five files into g_tpageParallax2 indexed by (short)g_racePlacement,
+* so the results-screen trophy shimmer changes color with placement.
+* The files themselves are per-track, not per-finish-position. */
 #define PATH_EMAP               DATA_DIR SEP "BIN" SEP "EMAP" SEP
 #define PATH_EMAP_SONICR        PATH_EMAP "SONICR.RAW"
 #define PATH_EMAP_NO1           PATH_EMAP "NO1.RAW"   /* Island env-map */
@@ -203,6 +217,16 @@
 #define PATH_MENU_OPTION00      PATH_OPTION "OPTION00.RAW"
 #define PATH_MENU_LOADSAVE      PATH_OPTION "LOAD00.RAW"
 
+/* Widescreen variants (16:9) */
+#define PATH_MENU_WIDE_MODESEL      PATH_OPTION "WIDE_SMODE00.RAW"
+#define PATH_MENU_WIDE_TIMEATTACK   PATH_OPTION "WIDE_STAMOD00.RAW"
+#define PATH_MENU_WIDE_MULTIMODE    PATH_OPTION "WIDE_SMPMOD00.RAW"
+#define PATH_MENU_WIDE_CHARSEL      PATH_OPTION "WIDE_SCHAR00.RAW"
+#define PATH_MENU_WIDE_COURSE0      PATH_OPTION "WIDE_SCRSE00.RAW"
+#define PATH_MENU_WIDE_OPTIONS0     PATH_OPTION "WIDE_OPT00.RAW"
+#define PATH_MENU_WIDE_MULTIPLAYER  PATH_OPTION "WIDE_MP00.RAW"
+#define PATH_MENU_WIDE_LOADSAVE     PATH_OPTION "WIDE_LOAD00.RAW"
+
 /* Title/logo screen textures */
 #define PATH_TITLES             DATA_DIR SEP "BIN" SEP "TITLES" SEP
 #define PATH_SEGALOGO_RAW       PATH_TITLES "SEGALOGO.RAW"
@@ -210,5 +234,10 @@
 #define PATH_TITLES_RAW         PATH_TITLES "TITLES.RAW"
 #define PATH_TITLES00_RAW       PATH_TITLES "TITLES00.RAW"
 #define PATH_TITLES3_BIN        PATH_TITLES "TITLES3.BIN"
+
+/* Widescreen variants (16:9) */
+#define PATH_WIDE_SEGALOGO_RAW  PATH_TITLES "WIDE_SEGALOGO.RAW"
+#define PATH_WIDE_TTLOGO_RAW    PATH_TITLES "WIDE_TTLOGO.RAW"
+#define PATH_WIDE_TITLES_RAW    PATH_TITLES "WIDE_TITLES.RAW"
 
 #endif /* SONICR_PATHS_H */

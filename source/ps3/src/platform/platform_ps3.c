@@ -220,6 +220,88 @@ void platform_shutdown(void)
 
 static char s_ps3ExeDir[1024] = "";
 
+extern int g_optCfg_470;
+
+static const char *s_wideTargets[] = {
+	"THE_END.RAW",
+	"EMERALDS.RAW",
+	"SONIC.RAW",
+	"TAILS.RAW",
+	"KNUCKLES.RAW",
+	"AMY.RAW",
+	"ROBOTNIK.RAW",
+	"MSONIC.RAW",
+	"DTAILS.RAW",
+	"MKNUCK.RAW",
+	"MROBOT.RAW",
+	"SSONIC.RAW",
+	"SMODE00.RAW",
+	"STAMOD00.RAW",
+	"SMPMOD00.RAW",
+	"SCHAR00.RAW",
+	"SCRSE00.RAW",
+	"OPT00.RAW",
+	"MP00.RAW",
+	"LOAD00.RAW",
+	"SEGALOGO.RAW",
+	"TTLOGO.RAW",
+	"TITLES.RAW"
+};
+
+static int path_stricmp(const char *s1, const char *s2)
+{
+	while (*s1 && *s2) {
+		char c1 = (*s1 >= 'a' && *s1 <= 'z') ? (*s1 - 32) : *s1;
+		char c2 = (*s2 >= 'a' && *s2 <= 'z') ? (*s2 - 32) : *s2;
+		if (c1 != c2) return c1 - c2;
+		s1++;
+		s2++;
+	}
+	return (unsigned char)*s1 - (unsigned char)*s2;
+}
+
+static int path_strnicmp(const char *s1, const char *s2, size_t n)
+{
+	while (n > 0 && *s1 && *s2) {
+		char c1 = (*s1 >= 'a' && *s1 <= 'z') ? (*s1 - 32) : *s1;
+		char c2 = (*s2 >= 'a' && *s2 <= 'z') ? (*s2 - 32) : *s2;
+		if (c1 != c2) return c1 - c2;
+		s1++;
+		s2++;
+		n--;
+	}
+	if (n == 0) return 0;
+	return (unsigned char)*s1 - (unsigned char)*s2;
+}
+
+static int GetWidescreenPath(const char *path, char *buf, size_t bufSize)
+{
+	if (path == NULL || buf == NULL || bufSize == 0) return 0;
+
+	const char *slash = strrchr(path, '/');
+	const char *bslash = strrchr(path, '\\');
+	if (bslash > slash) slash = bslash;
+
+	const char *filename = (slash != NULL) ? (slash + 1) : path;
+	size_t dirLen = (size_t)(filename - path);
+
+	if (path_strnicmp(filename, "WIDE_", 5) == 0) return 0;
+
+	int matched = 0;
+	size_t targetCount = sizeof(s_wideTargets) / sizeof(s_wideTargets[0]);
+	for (size_t i = 0; i < targetCount; i++) {
+		if (path_stricmp(filename, s_wideTargets[i]) == 0) {
+			matched = 1;
+			break;
+		}
+	}
+
+	if (!matched) return 0;
+
+	snprintf(buf, bufSize, "%.*sWIDE_%s", (int)dirLen, path, filename);
+	return 1;
+}
+
 void ps3_set_exe_path(const char *argv0)
 {
 	if (argv0 == NULL || argv0[0] == '\0') return;
@@ -241,6 +323,19 @@ void ps3_set_exe_path(const char *argv0)
 FILE *ps3_fOpen(const char *path, const char *mode)
 {
 	if (path == NULL) return NULL;
+
+	if (g_optCfg_470 != 0) {
+		char widePath[1024];
+		if (GetWidescreenPath(path, widePath, sizeof(widePath))) {
+			g_optCfg_470 = 0;
+			FILE *fpWide = ps3_fOpen(widePath, mode);
+			g_optCfg_470 = 1;
+			if (fpWide != NULL) {
+				printf("[PS3 fOpen] Widescreen texture loaded: '%s'\n", widePath);
+				return fpWide;
+			}
+		}
+	}
 
 	if (path[0] == '/' || path[0] == '\\') {
 		FILE *fp = fopen(path, mode);
