@@ -1035,7 +1035,12 @@ void DrawTimerAndStatus(int vpIndex)
 		int hudRightXOff = 0;
 #ifdef SONICR_WIDESCREEN
 		if (g_optCfg_470 != 0) {
-			hudRightXOff = g_screenWidth / 3;
+			if (g_numHumans == 2 && g_viewportIndex == 1) {
+				hudRightXOff = g_screenWidth / 6;
+			}
+			else {
+				hudRightXOff = g_screenWidth / 3;
+			}
 		}
 #endif
 
@@ -1165,7 +1170,12 @@ void DrawTimerAndStatus(int vpIndex)
 		int hudXOff = 0;
 #ifdef SONICR_WIDESCREEN
 		if (g_optCfg_470 != 0) {
-			hudXOff = g_screenWidth / 6;
+			if (g_numHumans == 2 && g_viewportIndex == 1) {
+				hudXOff = g_screenWidth / 12;
+			}
+			else {
+				hudXOff = g_screenWidth / 6;
+			}
 		}
 #endif
 		Player *pBase = (Player *)g_playerBase;
@@ -1208,7 +1218,12 @@ void DrawTimerAndStatus(int vpIndex)
 		int hudXOff = 0;
 #ifdef SONICR_WIDESCREEN
 		if (g_optCfg_470 != 0) {
-			hudXOff = g_screenWidth / 6;
+			if (g_numHumans == 2 && g_viewportIndex == 1) {
+				hudXOff = g_screenWidth / 12;
+			}
+			else {
+				hudXOff = g_screenWidth / 6;
+			}
 		}
 #endif
 		if (g_numHumans == 1) {                                 /* 0x4D3118-0x4D3315 */
@@ -1275,19 +1290,10 @@ void DrawTimerAndStatus(int vpIndex)
 
 		if (g_numHumans == 2) {                                 /* 0x4D3317-0x4D33BE */
 			/* 2P split-screen WIN/LOSE banner per viewport.
-			* X position depends on viewport index and the viewport player's rank;
+			* X position depends on viewport index and widescreen offset;
 			* the banner picture (WIN vs LOSE) is chosen by rank alone. */
 			int rank = vpPlayer->racePosition;
-			int x;
-			if (g_viewportIndex != 0) {                          /* 0x4D3321-0x4D334B */
-				x = 0x40;
-			}
-			else if (rank == 1) {                             /* 0x4D3338-0x4D333D */
-				x = 0x60;
-			}
-			else {                                            /* 0x4D3344 */
-				x = 0x160;
-			}
+			int x = (g_viewportIndex != 0) ? (0x40 + hudXOff) : (0xE0 + hudXOff);
 
 			if (rank == 1) {                                    /* 0x4D3359 */
 				/* WIN banner — 192x74 at (x, 82), uv (0x40, 0x6C, 0x60, 0x25) */
@@ -1420,19 +1426,19 @@ void DrawTimerAndStatus(int vpIndex)
 	*   ... DrawTexturedQuad(x, y, ..., 0x50, 0x3C, g_tpageObjects, per-rank UV) at 0x4D3712
 	*/
 	if ((g_raceType == RACE_MULTIPLAYER && g_raceSubMode != SUBMODE_BALLOON) || g_raceType == 4) {
-		int hudXOff = 0;
+		int hudRightXOff = 0;
 #ifdef SONICR_WIDESCREEN
 		if (g_optCfg_470 != 0) {
-			hudXOff = g_screenWidth / 6;
+			hudRightXOff = g_screenWidth / 3;
 		}
 #endif
 		int x, y;
 		if (g_numHumans == 2 && g_viewportIndex == 0) {                  /* 0x4D36AA-0x4D36BA */
-			x = 0x220 + hudXOff;                                         /* 0x4D36C1 */
+			x = 0x220 + hudRightXOff;                                    /* 0x4D36C1 */
 			y = 0xA4;                                                    /* 0x4D36BC */
 		}
 		else {
-			x = 0x10 + hudXOff;                                          /* 0x4D36CD */
+			x = 0x10;                                                    /* 0x4D36CD */
 			y = 0x194;                                                   /* 0x4D36C8 */
 		}
 		int rank = vpPlayer->racePosition;                               /* 0x4D36D5: player+0x5A>>16 */
@@ -1581,7 +1587,12 @@ subMode2_loop_exit:
 	int hudCenterXOff = 0;
 #ifdef SONICR_WIDESCREEN
 	if (g_optCfg_470 != 0) {
-		hudCenterXOff = g_screenWidth / 6;
+		if (g_numHumans == 2 && g_viewportIndex == 1) {
+			hudCenterXOff = g_screenWidth / 12;
+		}
+		else {
+			hudCenterXOff = g_screenWidth / 6;
+		}
 	}
 #endif
 
@@ -1732,7 +1743,12 @@ void DrawReverseIndicator(Player *pl)
 		int hudXOff = 0;
 #ifdef SONICR_WIDESCREEN
 		if (g_optCfg_470 != 0) {
-			hudXOff = g_screenWidth / 6;
+			if (g_numHumans == 2 && g_viewportIndex == 1) {
+				hudXOff = g_screenWidth / 12;
+			}
+			else {
+				hudXOff = g_screenWidth / 6;
+			}
 		}
 #endif
 		int xPos, yPos;
@@ -1772,7 +1788,12 @@ void DrawMinimapWidget(char *vpPlayer)  /* EAX = current viewport's player point
 	int hudRightXOff = 0;
 #ifdef SONICR_WIDESCREEN
 	if (g_optCfg_470 != 0) {
-		hudRightXOff = g_screenWidth / 3;
+		if (g_numHumans == 2 && g_viewportIndex == 1) {
+			hudRightXOff = g_screenWidth / 6;
+		}
+		else {
+			hudRightXOff = g_screenWidth / 3;
+		}
 	}
 #endif
 

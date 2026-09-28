@@ -170,14 +170,21 @@ void DrawPauseOverlay(void)
 	if (g_isPaused == 0)
 		return;                                                 /* 0x4d1453 */
 
+	int xOffset = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		xOffset = g_screenWidth / 6;
+	}
+#endif
+
 	/* Background box */
-	DrawTexturedQuad(0xe0, 0xc0, 0x40a00000,                    /* 0x4d1486: xPos=224, yPos=192, depth=5.0f */
+	DrawTexturedQuad(0xe0 + xOffset, 0xc0, 0x40a00000,                    /* 0x4d1486: xPos=224, yPos=192, depth=5.0f */
 		0xc0, 0x80, tpage,                         /* width=192, height=128 */
 		0xa0, 0x68, 0x60, 0x40,                    /* uvX=160, uvY=104, uvW=96, uvH=64 */
 		VERTEX_WHITE);                              /* 0x4d1460-0x4d1490 */
 
 	/* "PAUSE" title */
-	DrawTexturedQuad(0x10a, 0xb4, 0x40800000,                   /* 0x4d14b5: xPos=266, yPos=180, depth=4.0f */
+	DrawTexturedQuad(0x10a + xOffset, 0xb4, 0x40800000,                   /* 0x4d14b5: xPos=266, yPos=180, depth=4.0f */
 		0x6c, 0x1a, tpage,                         /* width=108, height=26 */
 		0x78, 0xc2, 0x36, 0xd,                     /* uvX=120, uvY=194, uvW=54, uvH=13 */
 		VERTEX_WHITE);                              /* 0x4d1495-0x4d14bf */
@@ -186,14 +193,14 @@ void DrawPauseOverlay(void)
 	int uvY;
 	/* Option 0 — Resume:  yPos=0xdc(220), uvX=0x32(50) */
 	uvY = (sel == 0) ? 0x3d : 0x32;                             /* 0x4d14d4: selected=61, unselected=50 */
-	DrawTexturedQuad(0x140 - 0x42, 0xdc, 0x40800000,            /* xPos=254, yPos=220, depth=4.0f */
+	DrawTexturedQuad(0x140 - 0x42 + xOffset, 0xdc, 0x40800000,            /* xPos=254, yPos=220, depth=4.0f */
 		0x42 * 2, 0x16, tpage,                     /* width=132, height=22 */
 		0x32, uvY, 0x42, 0xb,                      /* uvX=50, uvW=66, uvH=11 */
 		VERTEX_WHITE);                              /* 0x4d14e1-0x4d150f */
 
 	/* Option 1 — Options/Restart:  yPos=0xf4(244), uvX=0x74(116) */
 	uvY = (sel == 1) ? 0x3d : 0x32;                             /* 0x4d1524 */
-	DrawTexturedQuad(0x140 - 0x42, 0xf4, 0x40800000,            /* xPos=254, yPos=244, depth=4.0f */
+	DrawTexturedQuad(0x140 - 0x42 + xOffset, 0xf4, 0x40800000,            /* xPos=254, yPos=244, depth=4.0f */
 		0x42 * 2, 0x16, tpage,                     /* width=132, height=22 */
 		0x74, uvY, 0x42, 0xb,                      /* uvX=116, uvW=66, uvH=11 */
 		VERTEX_WHITE);                              /* 0x4d1535-0x4d1563 */
@@ -201,7 +208,7 @@ void DrawPauseOverlay(void)
 
 	/* Option 2 — Quit:  yPos=0x10c(268), uvX=0xb6(182) */
 	uvY = (sel == 2) ? 0x3d : 0x32;                             /* 0x4d1578 */
-	DrawTexturedQuad(0x140 - 0x42, 0x10c, 0x40800000,           /* xPos=254, yPos=268, depth=4.0f */
+	DrawTexturedQuad(0x140 - 0x42 + xOffset, 0x10c, 0x40800000,           /* xPos=254, yPos=268, depth=4.0f */
 		0x42 * 2, 0x16, tpage,                     /* width=132, height=22 */
 		0xb6, uvY, 0x42, 0xb,                      /* uvX=182, uvW=66, uvH=11 */
 		VERTEX_WHITE);                              /* 0x4d1589-0x4d15b7 */

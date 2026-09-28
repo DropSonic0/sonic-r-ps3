@@ -3062,6 +3062,13 @@ static void RenderRankingNavArrows(void)                 /* 0x00490508 */
 	* (xPos, yPos, depth, width, height, tpage, uvX, uvY, uvW, uvH, color)
 	* UV coords from binary software path (0x490595-0x49078b). */
 
+	int rankXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		rankXOff = g_screenWidth / 6;
+	}
+#endif
+
 	/* UP arrow */
 	{
 		int canUp = 0;
@@ -3075,7 +3082,7 @@ static void RenderRankingNavArrows(void)                 /* 0x00490508 */
 		}
 		unsigned int color = canUp ? 0xC0FFFFFFu : 0x60808080u;
 		//canUp ? 0xC0E0E0E0u : 0x60808080u;
-		DrawTexturedQuad(0x1D0, 0x94, 0x443B8000u, 0x30, 0x30,
+		DrawTexturedQuad(0x1D0 + rankXOff, 0x94, 0x443B8000u, 0x30, 0x30,
 			tpage, 0xB8, 0xE8, 0x18, 0x18, color);
 	}
 
@@ -3092,7 +3099,7 @@ static void RenderRankingNavArrows(void)                 /* 0x00490508 */
 		}
 		unsigned int color = canDown ? 0xC0FFFFFFu : 0x60808080u;
 		//canDown ? 0xC0E0E0E0u : 0x60808080u;
-		DrawTexturedQuad(0x228, 0x94, 0x443B8000u, 0x30, 0x30,
+		DrawTexturedQuad(0x228 + rankXOff, 0x94, 0x443B8000u, 0x30, 0x30,
 			tpage, 0x88, 0xE8, 0x18, 0x18, color);
 	}
 
@@ -3101,7 +3108,7 @@ static void RenderRankingNavArrows(void)                 /* 0x00490508 */
 		int canLeft = (s_rankPage > 0);
 		unsigned int color = canLeft ? 0xC0FFFFFFu : 0x60808080u;
 		//canLeft ? 0xC0E0E0E0u : 0x60808080u;
-		DrawTexturedQuad(0x1FC, 0x190, 0x443B8000u, 0x30, 0x30,
+		DrawTexturedQuad(0x1FC + rankXOff, 0x190, 0x443B8000u, 0x30, 0x30,
 			tpage, 0xA0, 0xE8, 0x18, 0x18, color);
 	}
 
@@ -3111,7 +3118,7 @@ static void RenderRankingNavArrows(void)                 /* 0x00490508 */
 		int canRight = (maxPage > s_rankPage);
 		unsigned int color = canRight ? 0xC0FFFFFFu : 0x60A0A0A0u;
 		//canRight ? 0xC0E0E0E0u : 0x60A0A0A0u;
-		DrawTexturedQuad(0x1FC, 0xE8, 0x443B8000u, 0x30, 0x30,
+		DrawTexturedQuad(0x1FC + rankXOff, 0xE8, 0x443B8000u, 0x30, 0x30,
 			tpage, 0x70, 0xE8, 0x18, 0x18, color);
 	}
 }
@@ -3398,12 +3405,19 @@ int TimeRankingScreen(void)
 		   /* Render emblems (GP trophy, balloon, tag figures, etc.) */
 		   RenderRankingEmblems();
 
+		   int rankXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		   if (g_optCfg_470 != 0) {
+			   rankXOff = g_screenWidth / 6;
+		   }
+#endif
+
 		   /* Render 8 row backgrounds via DrawTexturedQuad */
 		   {
 			   static const int s_spriteUvY[8] = {
 				   0x00, 0x10, 0x00, 0x10, 0x20, 0x30, 0x40, 0x50
 			   };
-			   int sprX = s_rankLayout[0];
+			   int sprX = s_rankLayout[0] + rankXOff;
 			   for (int row = 0; row < 8; row++) {
 				   int sprY = s_rankLayout[row + 1] * 2;
 				   DrawTexturedQuad(sprX, sprY, 0x43FA0000u,
@@ -3416,7 +3430,7 @@ int TimeRankingScreen(void)
 		   /* Render 8 rows of time digits */
 		   for (int row = 0; row < 8; row++) {
 			   int yPos = s_rankLayout[row + 1] * 2;
-			   int digX = s_rankLayout[0] + 0x12C;
+			   int digX = s_rankLayout[0] + 0x12C + rankXOff;
 			   int timeValue = *(int *)((char *)g_saveBlock +
 				   s_rankSaveOffset[row] + pageLookup * 4 + charId * 0xA4);
 			   RenderTimeDigits(digX, yPos, 0, timeValue, 1);
@@ -7085,6 +7099,11 @@ static void DrawResultTimeEntry(int screenX, int screenY, int playerIdx,
 	int labelV = lapIdx * 0x10 + 0x40;
 	int drawX = screenX * 2;
 	int drawY = screenY * 2;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		drawX += g_screenWidth / 6;
+	}
+#endif
 	DrawTexturedQuad(drawX - 0x58, drawY, 0x447A0000, 0x50, 0x20,
 		g_uiTexPage + 1, 0, labelV, 0x28, 0x10, VERTEX_WHITE);
 
@@ -7140,6 +7159,11 @@ static void DrawResultBestLap(int screenX, int screenY, int playerIdx, int style
 	* Binary has 0x90 but texture shows LAP RECORD at 0x80, COURSE RECORD at 0x90 */
 	int drawX = screenX * 2;
 	int drawY = screenY * 2;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		drawX += g_screenWidth / 6;
+	}
+#endif
 	DrawTexturedQuad(drawX - 0xD0, drawY, 0x447A0000, 0xC8, 0x20,
 		g_uiTexPage + 1, 0, 0x80, 0x64, 0x10, VERTEX_WHITE);
 
@@ -7202,6 +7226,11 @@ static void DrawResultTotalTime(int screenX, int screenY, int playerIdx, int sty
 	int tpage = g_uiTexPage + 1;  /* results texture loaded to g_uiTexPage+1 */
 	int drawX = screenX * 2;
 	int drawY = screenY * 2;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		drawX += g_screenWidth / 6;
+	}
+#endif
 
 	/* Label sprite: two variants based on numViewports
 	* Binary 0x4c5042: cmp [0x6e9910], 1; jle large_label */
@@ -7276,6 +7305,11 @@ static void DrawResultChampPoints(int screenX, int screenY, int playerIdx, int s
 	* uvX=0, uvY=0x90 (binary push order: 0 then 0x90) */
 	int drawX = screenX * 2;
 	int drawY = screenY * 2;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		drawX += g_screenWidth / 6;
+	}
+#endif
 	DrawTexturedQuad(drawX - 0xD0, drawY, 0x447A0000, 0xC8, 0x20,
 		g_uiTexPage + 1, 0, 0x90, 0x64, 0x10, VERTEX_WHITE);
 
@@ -7356,6 +7390,11 @@ static void DrawResultWinnerTime(int screenX, int screenY, int style)
 	* Binary 0x4c555b-0x4c558d */
 	int drawX = screenX * 2;
 	int drawY = screenY * 2;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		drawX += g_screenWidth / 6;
+	}
+#endif
 	DrawTexturedQuad(drawX - 0xD0, drawY, 0x447A0000, 0xC8, 0x20,
 		g_uiTexPage + 1, 0, 0xC0, 0x64, 0x10, VERTEX_WHITE);
 
@@ -8238,10 +8277,17 @@ int ResultsScreen(int screenType)
 					modelIdx, 0);
 			}
 
+			int resXOff = 0;
+#ifdef SONICR_WIDESCREEN
+			if (g_optCfg_470 != 0) {
+				resXOff = g_screenWidth / 6;
+			}
+#endif
+
 			/* Selected button highlight — binary 0x4c81a5-0x4c81d4
 			* Position from s_resultScrollPos, always rendered */
 			{
-				int highlightX = (s_resultScrollPos - 4) * 2;
+				int highlightX = (s_resultScrollPos - 4) * 2 + resXOff;
 				DrawTexturedQuad(highlightX, 0x170, 0x433E0000, 0x90, 0x50,
 					g_uiTexPage + 1, 0, 0x18, 0x48, 0x28,
 					VERTEX_WHITE);
@@ -8256,7 +8302,7 @@ int ResultsScreen(int screenType)
 				const int startRow = s_resultNumItems;
 				int texU = startRow * 0x40;
 				for (int slot = startRow; slot < 3; slot++) {
-					int btnX = s_resultButtonX[startRow][slot] * 2;
+					int btnX = s_resultButtonX[startRow][slot] * 2 + resXOff;
 					DrawTexturedQuad(btnX, 0x188, 0x43480000, 0x80, 0x30,
 						g_uiTexPage + 1, texU, 0, 0x40, 0x18,
 						VERTEX_WHITE);

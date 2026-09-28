@@ -486,7 +486,7 @@ void SpawnTAParticles(void)
 		/* Render mode flag: D3D = 0x40 (binary: soft=0, d3d=0x40) */
 		part->uvBaseX = 0x40;                                   /* 0x486852 */
 		part->uvBaseY = 0x60;                                   /* 0x48686a */
-		part->tpage = *(unsigned char *)&g_tpageCharBase;       /* 0x486856: tpage */
+		part->tpage = g_tpageParticle1;       /* 0x486856: tpage */
 		part->uvSpan = 0x10;                                    /* 0x486863 */
 
 		/* Advance write index (circular, 64 entries) */

@@ -138,13 +138,13 @@ int platform_init(int width, int height, int fullscreen, const char *title)
 	PSGLinitOptions initOpts;
 	memset(&initOpts, 0, sizeof(PSGLinitOptions));
 	initOpts.enable = PSGL_INIT_MAX_SPUS | PSGL_INIT_INITIALIZE_SPUS | PSGL_INIT_HOST_MEMORY_SIZE;
-	initOpts.maxSPUs = 1;
-	initOpts.initializeSPUs = 0;
+	initOpts.maxSPUs = 2;
+	initOpts.initializeSPUs = 2;
 	initOpts.persistentMemorySize = 0;
 	initOpts.transientMemorySize = 0;
 	initOpts.errorConsole = 0;
 	initOpts.fifoSize = 0;
-	initOpts.hostMemorySize = 8 * 1024 * 1024;
+	initOpts.hostMemorySize = 32 * 1024 * 1024;
 
 	printf("[PS3 PSGL] Initializing PSGL with psglInit(&initOpts)...\n");
 	psglInit(&initOpts);
