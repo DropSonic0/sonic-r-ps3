@@ -1032,11 +1032,18 @@ void DrawTimerAndStatus(int vpIndex)
 		int lap3 = vpPlayer->lap3Time & 0xFFFFFF;
 		int totalTime = lap1 + lap2 + lap3;
 
+		int hudRightXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		if (g_optCfg_470 != 0) {
+			hudRightXOff = g_screenWidth / 3;
+		}
+#endif
+
 		/* Main timer — top right.  Binary 0x4D2D81-0x4D2D9B:
 		* 2P vertical split uses X=0xC0, else X=0x200. */
-		int timerX = 0x200;                                      /* 0x4D2D8F / 0x4D2E52 */
+		int timerX = 0x200 + hudRightXOff;                        /* 0x4D2D8F / 0x4D2E52 */
 		if (g_numHumans == 2 && g_viewportIndex == 1) {           /* 0x4D2D82 */
-			timerX = 0xC0;                                       /* 0x4D2D9B */
+			timerX = 0xC0 + hudRightXOff;                         /* 0x4D2D9B */
 		}
 		DrawTimer(timerX, 0x10, 0x41200000, totalTime, 1);
 
@@ -1057,7 +1064,7 @@ void DrawTimerAndStatus(int vpIndex)
 		/* Character-specific icons (0x4D2EAD-0x4D2FC9) */
 		int charId = vpPlayer->charId;
 		int iconX = (g_numHumans == 2 && g_viewportIndex == 1)   /* 0x4D2EF4 */
-			? 0x98 : 0x1D8;
+			? (0x98 + hudRightXOff) : (0x1D8 + hudRightXOff);
 		if (!showTimer) {
 			iconX += 0x78;
 		}
@@ -1155,19 +1162,25 @@ void DrawTimerAndStatus(int vpIndex)
 	* Both sub-paths return before reaching the main race-end overlay below.
 	*/
 	if (g_raceType == 4 && g_postRaceCameraMode != 0) {
+		int hudXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		if (g_optCfg_470 != 0) {
+			hudXOff = g_screenWidth / 6;
+		}
+#endif
 		Player *pBase = (Player *)g_playerBase;
 		short p0place = pBase[0].racePosition;                  /* 0x4D308B: word @ 0x8FD550 */
 		short p1place = pBase[1].racePosition;                  /* 0x4D3092: word @ 0x8FDC6C */
 
 		if (p1place > p0place) {
 			/* WIN — player 0 ahead of player 1 (jle to LOSE not taken) */
-			DrawTexturedQuad(0xE0, 0x52, 0x41200000, 0xC0, 0x4A,        /* 0x4D30C5 */
+			DrawTexturedQuad(0xE0 + hudXOff, 0x52, 0x41200000, 0xC0, 0x4A,        /* 0x4D30C5 */
 				g_tpageObjects, 0x40, 0x6C, 0x60, 0x25,
 				VERTEX_WHITE);
 		}
 		else {
 			/* LOSE — player 1 caught or beat player 0 */
-			DrawTexturedQuad(0xE0, 0x52, 0x41200000, 0xC0, 0x4C,        /* 0x4D30FC */
+			DrawTexturedQuad(0xE0 + hudXOff, 0x52, 0x41200000, 0xC0, 0x4C,        /* 0x4D30FC */
 				g_tpageObjects, 0x40, 0x91, 0x60, 0x26,
 				VERTEX_WHITE);
 		}
@@ -1192,18 +1205,24 @@ void DrawTimerAndStatus(int vpIndex)
 	* here too, before this branch, in future blocks.
 	*/
 	if (g_postRaceCameraMode != 0) {
+		int hudXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		if (g_optCfg_470 != 0) {
+			hudXOff = g_screenWidth / 6;
+		}
+#endif
 		if (g_numHumans == 1) {                                 /* 0x4D3118-0x4D3315 */
 			if (g_raceType == RACE_SPECIAL) {                   /* 0x4D3127: cmp [0x8FB950], 3 */
 				/* VS Challenge race-end — 3 alt quads instead of placement+
 				* CONGRATULATIONS+ladder. Per Sonic Retro wiki, raceType==3
 				* is "VS. Challenge" mode (1v1 against a hidden character). */
-				DrawTexturedQuad(0x5E, 0x40, 0x41200000, 0x144, 0x34,    /* 0x4D3161 */
+				DrawTexturedQuad(0x5E + hudXOff, 0x40, 0x41200000, 0x144, 0x34,    /* 0x4D3161 */
 					g_tpageObjects, 0, 0x18, 0xA2, 0x1A,
 					VERTEX_WHITE);
-				DrawTexturedQuad(0x1C0, 0x40, 0x41200000, 0x64, 0x36,    /* 0x4D318D */
+				DrawTexturedQuad(0x1C0 + hudXOff, 0x40, 0x41200000, 0x64, 0x36,    /* 0x4D318D */
 					g_tpageObjects, 0, 0x32, 0x32, 0x1B,
 					VERTEX_WHITE);
-				DrawTexturedQuad(0x6F, 0x80, 0x41200000, 0x1A2, 0x34,    /* 0x4D31BE */
+				DrawTexturedQuad(0x6F + hudXOff, 0x80, 0x41200000, 0x1A2, 0x34,    /* 0x4D31BE */
 					g_tpageObjects, 0, 0x4D, 0xD1, 0x1A,
 					VERTEX_WHITE);
 				return;                                                  /* 0x4D31CC */
@@ -1212,7 +1231,7 @@ void DrawTimerAndStatus(int vpIndex)
 			/* Single-player race-end (raceType 0/1/2 — GP / Multiplayer / TA),
 			* not VS Challenge: main race-end overlay (placement + CONGRATS + ladder) */
 			int rank = vpPlayer->racePosition;                  /* 0x4D31CD: player+0x5A >> 16 */
-			DrawTexturedQuad(0x100, 0x60, 0x41200000, 0x80, 0x60,         /* 0x4D3217 */
+			DrawTexturedQuad(0x100 + hudXOff, 0x60, 0x41200000, 0x80, 0x60,         /* 0x4D3217 */
 				g_tpageObjects,
 				s_placementUvX[rank], s_placementUvY[rank],
 				s_placementUvW[rank], s_placementUvH[rank],
@@ -1221,7 +1240,7 @@ void DrawTimerAndStatus(int vpIndex)
 			rank = vpPlayer->racePosition;                      /* 0x4D321C: reload */
 			if (rank < 4 && g_netSessionActive == 0) {             /* 0x4D3225/0x4D3232 */
 				/* CONGRATULATIONS — top 3 finishers in offline single-player */
-				DrawTexturedQuad(0x40, 0x20, 0x41200000, 0x200, 0x30,    /* 0x4D325F */
+				DrawTexturedQuad(0x40 + hudXOff, 0x20, 0x41200000, 0x200, 0x30,    /* 0x4D325F */
 					g_tpageObjects, 0, 0, 0x100, 0x18,
 					VERTEX_WHITE);
 			}
@@ -1234,7 +1253,7 @@ void DrawTimerAndStatus(int vpIndex)
 			for (int i = 0; i < 5; i++) {                       /* 0x4D3271-0x4D3315 */
 				Player *p = &((Player *)g_playerBase)[i];
 				int prank = p->racePosition;                    /* 0x4D32A1: player+0x5A>>16 */
-				int x = (prank << 6) + 0x70;                    /* 0x4D32AC: rank*64+0x70 */
+				int x = (prank << 6) + 0x70 + hudXOff;          /* 0x4D32AC: rank*64+0x70 */
 
 				/* Portrait 32x32 at (x, 0x190) — uvX = charId*16, uvY = 0xD8 */
 				DrawTexturedQuad(x, 0x190, 0x41200000, 0x20, 0x20,       /* 0x4D32BD */
@@ -1287,7 +1306,7 @@ void DrawTimerAndStatus(int vpIndex)
 
 		/* numHumans >= 3 default — big placement glyph only, no banner, no ladder. */
 		int rank = vpPlayer->racePosition;                      /* 0x4D33BF */
-		DrawTexturedQuad(0x100, 0x60, 0x41200000, 0x80, 0x60,            /* 0x4D340A */
+		DrawTexturedQuad(0x100 + hudXOff, 0x60, 0x41200000, 0x80, 0x60,            /* 0x4D340A */
 			g_tpageObjects,
 			s_placementUvX[rank], s_placementUvY[rank],
 			s_placementUvW[rank], s_placementUvH[rank],
@@ -1401,13 +1420,19 @@ void DrawTimerAndStatus(int vpIndex)
 	*   ... DrawTexturedQuad(x, y, ..., 0x50, 0x3C, g_tpageObjects, per-rank UV) at 0x4D3712
 	*/
 	if ((g_raceType == RACE_MULTIPLAYER && g_raceSubMode != SUBMODE_BALLOON) || g_raceType == 4) {
+		int hudXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		if (g_optCfg_470 != 0) {
+			hudXOff = g_screenWidth / 6;
+		}
+#endif
 		int x, y;
 		if (g_numHumans == 2 && g_viewportIndex == 0) {                  /* 0x4D36AA-0x4D36BA */
-			x = 0x220;                                                   /* 0x4D36C1 */
+			x = 0x220 + hudXOff;                                         /* 0x4D36C1 */
 			y = 0xA4;                                                    /* 0x4D36BC */
 		}
 		else {
-			x = 0x10;                                                    /* 0x4D36CD */
+			x = 0x10 + hudXOff;                                          /* 0x4D36CD */
 			y = 0x194;                                                   /* 0x4D36C8 */
 		}
 		int rank = vpPlayer->racePosition;                               /* 0x4D36D5: player+0x5A>>16 */
@@ -1553,12 +1578,19 @@ subMode2_loop_exit:
 		centerY = 0x78;
 	}
 
+	int hudCenterXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		hudCenterXOff = g_screenWidth / 6;
+	}
+#endif
+
 	int scrW; /* ebx — 0x4D3954 */
 	if (g_numHumans == 2 && g_viewportIndex == 1) {              /* 0x4D395E */
-		scrW = 0xA0;
+		scrW = 0xA0 + hudCenterXOff;
 	}
 	else {
-		scrW = 0x140;
+		scrW = 0x140 + hudCenterXOff;
 	}
 
 	if (g_introTimer != 0)
@@ -1697,13 +1729,19 @@ void DrawReverseIndicator(Player *pl)
 	/* Draw REVERSE indicator (0x4D2698-0x4D26F2) */
 	int displayCount = pl->_unk_0x1E4; /* 0x4D2698: P_INT(0x1E2)>>16 = _unk_0x1E4 */
 	if (displayCount > 0xF) { /* 0x4D26A1: only draw if > 15 */
+		int hudXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		if (g_optCfg_470 != 0) {
+			hudXOff = g_screenWidth / 6;
+		}
+#endif
 		int xPos, yPos;
 		if (g_numHumans == 2 && g_viewportIndex == 1) { /* 0x4D26A6-0x4D26B6 */
-			xPos = 0x68;
+			xPos = 0x68 + hudXOff;
 			yPos = 0xA4;
 		}
 		else {
-			xPos = 0x108; /* 0x4D26C4-0x4D26C9 */
+			xPos = 0x108 + hudXOff; /* 0x4D26C4-0x4D26C9 */
 			yPos = 0x10;
 		}
 		DrawTexturedQuad(xPos, yPos, 0x41200000, 0x70, 0x34,
@@ -1731,26 +1769,33 @@ void DrawReverseIndicator(Player *pl)
 * ===================================================================== */
 void DrawMinimapWidget(char *vpPlayer)  /* EAX = current viewport's player pointer */
 {
+	int hudRightXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		hudRightXOff = g_screenWidth / 3;
+	}
+#endif
+
 	/* Phase 1: Minimap screen position (0x4D2726-0x4D279A) */
 	int mapX, mapY;
 
 	if (g_numHumans == 2) {
 		/* Horizontal split — fixed top corner, side picked by race sub-mode */
 		if (g_viewportIndex == 0) {                              /* 0x4D2730 */
-			mapX = (g_raceSubMode == SUBMODE_NORMAL) ? 0x10 : 0x1B0;
+			mapX = (g_raceSubMode == SUBMODE_NORMAL) ? 0x10 : (0x1B0 + hudRightXOff);
 			mapY = 0x40;
 		}
 		/* Vertical split (0x4D275A) — per-track offset from ROM 0x5042C4 */
 		else {
 			int xOff = s_mmViewportTable[g_trackId][0];
 			int yOff = s_mmViewportTable[g_trackId][1];
-			mapX = 0x140 - (xOff + 0x60) * 2;
+			mapX = 0x140 - (xOff + 0x60) * 2 + hudRightXOff;
 			mapY = 0x1E0 - (yOff + 0x50) * 2;
 		}
 	}
 	/* Single player (or 3-4 player): bottom-right */
 	else {
-		mapX = 0x1B0;
+		mapX = 0x1B0 + hudRightXOff;
 		mapY = 0x130;
 	}
 

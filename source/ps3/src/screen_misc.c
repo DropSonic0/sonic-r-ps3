@@ -645,8 +645,15 @@ static void DrawOptionItem(int xPos, int itemIndex)
 	int itemW = info[3];
 	int hasValue = info[4];
 
+	int optXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		optXOff = g_screenWidth / 6;
+	}
+#endif
+
 	/* Draw the item label sprite */
-	int dstX = 0x140 - itemW * 2;  /* 320 - width*2 — right-justified */
+	int dstX = 0x140 - itemW * 2 + optXOff;  /* 320 - width*2 — right-justified */
 
 	/* Quad path — the binary's D3D branch, kept for the GL backend */
 	DrawTexturedQuad(dstX, xPos * 2, 0x43FA0000,  /* depth = 500.0f */
@@ -658,7 +665,7 @@ static void DrawOptionItem(int xPos, int itemIndex)
 #ifdef SONICR_WIDESCREEN
 	if (itemIndex == 23) {
 		const char *str = (g_optCfg_470 == 0) ? "4/3" : "16/9";
-		DrawPixText(str, 0x148, xPos * 2 + 8, 2, VERTEX_WHITE);
+		DrawPixText(str, 0x148 + optXOff, xPos * 2 + 8, 2, VERTEX_WHITE);
 		return;
 	}
 #endif
@@ -816,7 +823,7 @@ static void DrawOptionItem(int xPos, int itemIndex)
 	if (hasValue == 1) {
 		/* Binary toggle: draw ON/OFF icon */
 		int uvY = (value << 4) + uvBaseY;  /* value * 16 + base */
-		DrawTexturedQuad(0x148, xPos * 2, 0x43FA0000,
+		DrawTexturedQuad(0x148 + optXOff, xPos * 2, 0x43FA0000,
 			0x80, 0x20,
 			g_uiTexPage + valueTpage,
 			uvBaseX, uvY, 0x40, 0x10,
@@ -828,13 +835,13 @@ static void DrawOptionItem(int xPos, int itemIndex)
 		int ones = value % 10;
 
 		/* Draw tens digit */
-		DrawTexturedQuad(0x148, xPos * 2, 0x43FA0000,
+		DrawTexturedQuad(0x148 + optXOff, xPos * 2, 0x43FA0000,
 			0x18, 0x20,
 			g_uiTexPage + 2,
 			tens * 12, 0xF0, 0x0C, 0x10,
 			VERTEX_WHITE);
 		/* Draw ones digit */
-		DrawTexturedQuad(0x164, xPos * 2, 0x43FA0000,
+		DrawTexturedQuad(0x164 + optXOff, xPos * 2, 0x43FA0000,
 			0x18, 0x20,
 			g_uiTexPage + 2,
 			ones * 12, 0xF0, 0x0C, 0x10,
@@ -846,12 +853,12 @@ static void DrawOptionItem(int xPos, int itemIndex)
 		int tens = displayVal / 10;
 		int ones = displayVal % 10;
 
-		DrawTexturedQuad(0x148, xPos * 2, 0x43FA0000,
+		DrawTexturedQuad(0x148 + optXOff, xPos * 2, 0x43FA0000,
 			0x18, 0x20,
 			g_uiTexPage + 2,
 			tens * 12, 0xF0, 0x0C, 0x10,
 			VERTEX_WHITE);
-		DrawTexturedQuad(0x164, xPos * 2, 0x43FA0000,
+		DrawTexturedQuad(0x164 + optXOff, xPos * 2, 0x43FA0000,
 			0x18, 0x20,
 			g_uiTexPage + 2,
 			ones * 12, 0xF0, 0x0C, 0x10,
@@ -874,23 +881,29 @@ static void DrawOptionItem(int xPos, int itemIndex)
 static void DrawControlsRemapLabels(void)
 {
 	int tpage3 = g_uiTexPage + 3;
+	int optXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		optXOff = g_screenWidth / 6;
+	}
+#endif
 
 	/* Column headers — "PLAYER 1" left, "PLAYER 2" right (UV row 0) */
-	DrawTexturedQuad(0xBC, 0x6E, 0x43FA0000,
+	DrawTexturedQuad(0xBC + optXOff, 0x6E, 0x43FA0000,
 		0x80, 0x18, tpage3,
 		0, 0, 0x40, 0x0C,
 		VERTEX_WHITE);
-	DrawTexturedQuad(0x144, 0x6E, 0x43FA0000,
+	DrawTexturedQuad(0x144 + optXOff, 0x6E, 0x43FA0000,
 		0x80, 0x18, tpage3,
 		0x40, 0, 0x40, 0x0C,
 		VERTEX_WHITE);
 
 	/* Player number sub-headers (UV at 0xC0,0x38 / 0xC0,0x4A) */
-	DrawTexturedQuad(0x10, 0x68, 0x43FA0000,
+	DrawTexturedQuad(0x10 + optXOff, 0x68, 0x43FA0000,
 		0x80, 0x24, tpage3,
 		0xC0, 0x38, 0x40, 0x12,
 		VERTEX_WHITE);
-	DrawTexturedQuad(0x1F0, 0x68, 0x43FA0000,
+	DrawTexturedQuad(0x1F0 + optXOff, 0x68, 0x43FA0000,
 		0x80, 0x24, tpage3,
 		0xC0, 0x4A, 0x40, 0x12,
 		VERTEX_WHITE);
@@ -902,7 +915,7 @@ static void DrawControlsRemapLabels(void)
 		| ((unsigned)val << 16)
 		| ((unsigned)val << 8)
 		| (unsigned)val;
-	DrawTexturedQuad(0x10, 0x1BA, 0x43FA0000,
+	DrawTexturedQuad(0x10 + optXOff, 0x1BA, 0x43FA0000,
 		0x48, 0x1A, tpage3,
 		0xDC, 0x6B, 0x24, 0x0D,
 		pulseColor);
@@ -911,11 +924,11 @@ static void DrawControlsRemapLabels(void)
 	int yPos = 0x96;
 	int uvY = 0x0C;
 	for (int i = 0; i < 10; i++) {
-		DrawTexturedQuad(0xBC, yPos, 0x43FA0000,
+		DrawTexturedQuad(0xBC + optXOff, yPos, 0x43FA0000,
 			0x80, 0x18, tpage3,
 			0, uvY, 0x40, 0x0C,
 			VERTEX_WHITE);
-		DrawTexturedQuad(0x144, yPos, 0x43FA0000,
+		DrawTexturedQuad(0x144 + optXOff, yPos, 0x43FA0000,
 			0x80, 0x18, tpage3,
 			0x40, uvY, 0x40, 0x0C,
 			VERTEX_WHITE);
@@ -956,6 +969,12 @@ static const int s_joyRemapUVs[4][6][4] = {
 static void DrawJoystickRemapProgress(char *slotPtr)
 {
 	int tpage3 = g_uiTexPage + 3;
+	int optXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		optXOff = g_screenWidth / 6;
+	}
+#endif
 
 	/* Read button count from slot[0x118] — binary reads dword at 0x116,
 	* shifts right 16 to get the high word. */
@@ -972,17 +991,17 @@ static void DrawJoystickRemapProgress(char *slotPtr)
 
 	/* Player header — UV Y depends on which player */
 	int playerUvY = g_optKeyRemapPlayer * 16 + 0x38;
-	DrawTexturedQuad(0x100, baseY, 0x43FA0000,
+	DrawTexturedQuad(0x100 + optXOff, baseY, 0x43FA0000,
 		0x80, 0x20, tpage3,
 		0x80, playerUvY, 0x40, 0x10,
 		VERTEX_WHITE);
 
 	/* Column headers — same as keyboard remap but at different X */
-	DrawTexturedQuad(0xB0, labelY, 0x43FA0000,
+	DrawTexturedQuad(0xB0 + optXOff, labelY, 0x43FA0000,
 		0x80, 0x18, tpage3,
 		0, 0, 0x40, 0x0C,
 		VERTEX_WHITE);
-	DrawTexturedQuad(0x150, labelY, 0x43FA0000,
+	DrawTexturedQuad(0x150 + optXOff, labelY, 0x43FA0000,
 		0x80, 0x18, tpage3,
 		0x40, 0, 0x40, 0x0C,
 		VERTEX_WHITE);
@@ -994,7 +1013,7 @@ static void DrawJoystickRemapProgress(char *slotPtr)
 		| ((unsigned)val << 16)
 		| ((unsigned)val << 8)
 		| (unsigned)val;
-	DrawTexturedQuad(0x10, 0x1BA, 0x43FA0000,
+	DrawTexturedQuad(0x10 + optXOff, 0x1BA, 0x43FA0000,
 		0x48, 0x1A, tpage3,
 		0xDC, 0x6B, 0x24, 0x0D,
 		pulseColor);
@@ -1016,11 +1035,11 @@ static void DrawJoystickRemapProgress(char *slotPtr)
 			y += 0x20;
 			continue;
 		}
-		DrawTexturedQuad(0xB0, y, 0x43FA0000,
+		DrawTexturedQuad(0xB0 + optXOff, y, 0x43FA0000,
 			0x80, 0x18, tpage3,
 			uvRow[i][0], uvRow[i][1], 0x40, 0x0C,
 			VERTEX_WHITE);
-		DrawTexturedQuad(0x150, y, 0x43FA0000,
+		DrawTexturedQuad(0x150 + optXOff, y, 0x43FA0000,
 			0x80, 0x18, tpage3,
 			uvRow[i][2], uvRow[i][3], 0x40, 0x0C,
 			VERTEX_WHITE);
@@ -1082,7 +1101,13 @@ static int LookupKeycapSpriteUV(int scancode, int *outUvX, int *outUvY)
 * ===================================================================== */
 void DrawKeyBindingItems(int page)
 {
-	int xPos = (page == 0) ? 0x30 : 0x210;              /* 0x4d5a02..0x4d5a3a */
+	int optXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		optXOff = g_screenWidth / 6;
+	}
+#endif
+	int xPos = (page == 0) ? (0x30 + optXOff) : (0x210 + optXOff);              /* 0x4d5a02..0x4d5a3a */
 	int yPos = 0x96;                                     /* esi = 0x96 */
 	int tableOffset = page * 40;                         /* page*5*8 = page*40 */
 
@@ -2054,12 +2079,19 @@ int OptionsMenuScreen(void)
 
 		int tpage = g_uiTexPage + 1;
 
+		int optXOff = 0;
+#ifdef SONICR_WIDESCREEN
+		if (g_optCfg_470 != 0) {
+			optXOff = g_screenWidth / 6;
+		}
+#endif
+
 		/* Background texture (two halves spanning 640 virtual pixels) */
-		DrawTexturedQuad(0, 0x18, 0x447A0000,
+		DrawTexturedQuad(0 + optXOff, 0x18, 0x447A0000,
 			0x140, 0x40, tpage,
 			0, 0, 0xA0, 0x20,
 			VERTEX_WHITE);
-		DrawTexturedQuad(0x140, 0x18, 0x447A0000,
+		DrawTexturedQuad(0x140 + optXOff, 0x18, 0x447A0000,
 			0x140, 0x40, tpage,
 			0, 0x20, 0xA0, 0x20,
 			VERTEX_WHITE);
@@ -2089,7 +2121,7 @@ int OptionsMenuScreen(void)
 			int selItem = g_optMenuSelected;
 			int itemWidth = s_optItemInfo[selItem][3];
 			int scrollPos = g_optMenuScrollCur;
-			int cursorX = 0x140 - itemWidth * 2 - 4;
+			int cursorX = 0x140 - itemWidth * 2 - 4 + optXOff;
 			int cursorY = (scrollPos - 2) * 2;
 
 			DrawTexturedQuad(cursorX, cursorY, 0x433E0000,
@@ -2296,7 +2328,13 @@ static void RenderSlotD3D(int slotIdx, int yPos)
 {
 	int tpage = g_uiTexPage + 1;
 	unsigned int color;
-	int baseX = 0x58;
+	int lsXOff = 0;
+#ifdef SONICR_WIDESCREEN
+	if (g_optCfg_470 != 0) {
+		lsXOff = g_screenWidth / 6;
+	}
+#endif
+	int baseX = 0x58 + lsXOff;
 
 	/* Pick base color: dimmed if highlight bit 0x10 set, else bright */
 	if (s_lsHighlight & 0x10) {                                /* 0x48EBE3 */
@@ -2804,49 +2842,55 @@ int LoadSaveScreen(void)
 
 		{
 			int tpage = g_uiTexPage + 1;
+			int lsXOff = 0;
+#ifdef SONICR_WIDESCREEN
+			if (g_optCfg_470 != 0) {
+				lsXOff = g_screenWidth / 6;
+			}
+#endif
 
 			/* Background header bars (top) */
-			DrawTexturedQuad(0, 0x20, 0x447A0000u,
+			DrawTexturedQuad(0 + lsXOff, 0x20, 0x447A0000u,
 				0x140, 0x40, tpage,
 				0, 0, 0xA0, 0x20,
 				VERTEX_WHITE);                   /* 0x490212 */
-			DrawTexturedQuad(0x140, 0x20, 0x447A0000u,
+			DrawTexturedQuad(0x140 + lsXOff, 0x20, 0x447A0000u,
 				0x140, 0x40, tpage,
 				0, 0x20, 0xA0, 0x20,
 				VERTEX_WHITE);                   /* 0x490248 */
 
 			/* Side panel / scrollbar */
-			DrawTexturedQuad(0, 0x180, 0x447BE000u,
+			DrawTexturedQuad(0 + lsXOff, 0x180, 0x447BE000u,
 				0x504, 0x42, tpage,
 				0xFF, 0, 0x01, 0x21,
 				VERTEX_WHITE);                   /* 0x490276 */
 
 			/* Bottom buttons — SAVE (col 0) */
-			DrawTexturedQuad(s_lsColumnX[0] * 2, 0x18E, 0x447BC000u,
+			DrawTexturedQuad(s_lsColumnX[0] * 2 + lsXOff, 0x18E, 0x447BC000u,
 				0x8C, 0x28, tpage,
 				0, 0x60, 0x46, 0x14,
 				VERTEX_WHITE);                   /* 0x4902A6 */
 
 			/* Bottom buttons — LOAD (col 1) */
-			DrawTexturedQuad(s_lsColumnX[1] * 2, 0x18E, 0x447BC000u,
+			DrawTexturedQuad(s_lsColumnX[1] * 2 + lsXOff, 0x18E, 0x447BC000u,
 				0x8C, 0x28, tpage,
 				0x46, 0x60, 0x46, 0x14,
 				VERTEX_WHITE);                   /* 0x4902D7 */
 
 			/* Bottom buttons — NEW (col 2) */
-			DrawTexturedQuad(s_lsColumnX[2] * 2, 0x18E, 0x447BC000u,
+			DrawTexturedQuad(s_lsColumnX[2] * 2 + lsXOff, 0x18E, 0x447BC000u,
 				0x8C, 0x28, tpage,
 				0x8C, 0x60, 0x46, 0x14,
 				VERTEX_WHITE);                   /* 0x49030B */
 
 			/* Cursor arrow (column indicator) */
-			DrawTexturedQuad((s_lsScrollXCur - 1) * 2, 0x18C, 0x447B8000u,
+			DrawTexturedQuad((s_lsScrollXCur - 1) * 2 + lsXOff, 0x18C, 0x447B8000u,
 				0x90, 0x2C, tpage,
 				0xB4, 0x43, 0x48, 0x16,
 				VERTEX_WHITE);                   /* 0x490340 */
 
 			/* Slot list background panel */
-			DrawTexturedQuad(0x52, 0xC8, 0x447B8000u,
+			DrawTexturedQuad(0x52 + lsXOff, 0xC8, 0x447B8000u,
 				0x1DC, 0x50, tpage,
 				0, 0xB4, 0xEE, 0x28,
 				VERTEX_WHITE);                   /* 0x490374 */
@@ -2861,18 +2905,18 @@ int LoadSaveScreen(void)
 				else {
 					hlUvX = 0; hlUvY = 0x48; hlUvH = 0x18;
 				}
-				DrawTexturedQuad(0x8C, 0xBE, 0x447B4000u,
+				DrawTexturedQuad(0x8C + lsXOff, 0xBE, 0x447B4000u,
 					0x168, 0x32, tpage,
 					hlUvX, hlUvY, 0xB4, hlUvH,
 					VERTEX_WHITE);               /* 0x4903D5 */
 
 				/* Yes/No buttons */
-				DrawTexturedQuad(0xB0, 0xFA, 0x447B4000u,
+				DrawTexturedQuad(0xB0 + lsXOff, 0xFA, 0x447B4000u,
 					0x8C, 0x28, tpage,
 					0xA0, 0x1B, 0x46, 0x14,
 					VERTEX_WHITE);               /* 0x490407 */
 
-				DrawTexturedQuad(0x144, 0xFA, 0x447B4000u,
+				DrawTexturedQuad(0x144 + lsXOff, 0xFA, 0x447B4000u,
 					0x8C, 0x28, tpage,
 					0xA0, 0x2F, 0x46, 0x14,
 					VERTEX_WHITE);               /* 0x490439 */
@@ -2886,7 +2930,7 @@ int LoadSaveScreen(void)
 					else {
 						arrowX = 0x142;
 					}
-					DrawTexturedQuad(arrowX, 0xF8, 0x447B0000u,
+					DrawTexturedQuad(arrowX + lsXOff, 0xF8, 0x447B0000u,
 						0x90, 0x2C, tpage,
 						0xB4, 0x43, 0x48, 0x16,
 						VERTEX_WHITE);           /* 0x49047B */
