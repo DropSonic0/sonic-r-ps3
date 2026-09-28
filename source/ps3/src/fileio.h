@@ -26,7 +26,7 @@ int    sr_fError(FILE *file);
 #define fClose(file)                                    sr_fClose(file)
 #define fWrite(buffer, elementSize, elementCount, file) sr_fWrite((buffer), (elementSize), (elementCount), (file))
 #define fError(file)                                    sr_fError(file)
-#elif defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#elif defined(SONICR_PS3)
 FILE *ps3_fOpen(const char *path, const char *mode);
 #define fOpen(path, mode)                               ps3_fOpen((path), (mode))
 #define fRead(buffer, elementSize, elementCount, file)  fread(buffer, elementSize, elementCount, file)

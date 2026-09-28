@@ -43,7 +43,7 @@ typedef int net_socket_t;
 #define NET_WOULD_BLOCK(e) ((e) == EAGAIN || (e) == EWOULDBLOCK)
 #else
 #include <fcntl.h>
-#if !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
+#if !defined(SONICR_PS3)
 #include <unistd.h>
 #endif
 #include <sys/socket.h>
@@ -70,7 +70,7 @@ typedef int net_socket_t;
 
 typedef int net_socket_t;
 #define NET_INVALID_SOCKET (-1)
-#if defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_PS3)
 #define NET_CLOSESOCKET(s) (0)
 #else
 #define NET_CLOSESOCKET    close
@@ -129,7 +129,7 @@ static int set_nonblocking(net_socket_t fd)
     return ioctlsocket(fd, FIONBIO, &mode);
 #elif defined(SONICR_DC)
     return fs_fcntl(fd, F_SETFL, O_NONBLOCK);
-#elif defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#elif defined(SONICR_PS3)
 #ifndef SO_NBIO
 #define SO_NBIO 0x1200
 #endif
@@ -508,7 +508,7 @@ int net_slot_is_connected(int slot)
     return s_playerValid[slot] ? 1 : 0;
 }
 
-#if defined(SONICR_DC) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_DC) || defined(SONICR_PS3)
 
 int net_probe_ping(const char *ip, int port, int timeout_ms)
 {

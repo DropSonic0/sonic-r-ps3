@@ -1,6 +1,6 @@
 #include "net_upnp.h"
 
-#if defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_PS3)
 
 int net_upnp_open_port(int port)
 {

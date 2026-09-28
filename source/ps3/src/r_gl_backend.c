@@ -8,7 +8,7 @@
 /* SOFT=1 builds replace this whole file with r_soft_backend.c. */
 #ifndef SONICR_SOFT_RENDER
 
-#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_PS3)
 #include <PSGL/psgl.h>
 #include <PSGL/psglu.h>
 #include <Cg/cg.h>
@@ -220,7 +220,7 @@ void R_FlushState(void)
 
     /* Texture environment (overbright) */
     if (s_desired.texEnv != s_current.texEnv) {
-#if defined(__EMSCRIPTEN__) || defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(__EMSCRIPTEN__) || defined(SONICR_PS3)
         /* WebGL/PSGL legacy GL emulation doesn't support GL_COMBINE/GL_ADD_SIGNED.
          * Fall back to plain GL_MODULATE for all modes. */
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -449,7 +449,7 @@ void R_ResetState(void)
  * Geometry submission — immediate draw
  * ===================================================================== */
 
-#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_PS3)
 
 typedef struct {
     float x, y, z, w;

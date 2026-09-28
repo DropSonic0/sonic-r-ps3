@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* Fallback for _Static_assert on pre-C11 compilers (e.g., PS3 SNC/GCC) */
+/* Fallback for _Static_assert on pre-C11 compilers (SONICR_PS3) */
 #ifndef _Static_assert
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 /* C11 native keyword */

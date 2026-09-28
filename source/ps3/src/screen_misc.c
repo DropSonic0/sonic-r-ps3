@@ -89,6 +89,8 @@ void UpdateIslandAnimations(void);  /* 0x47df20 — trackId 1 */
 void UpdateCityAnimations(void);    /* 0x47c384 — trackId 2 */
 void UpdateFactoryAnimations(void); /* 0x479b80 — trackId 4 */
 void UpdateRuinAnimations(void);    /* 0x47a5f8 — trackId 3 */
+static void DrawPixText(const char *s, int x, int y, int pixSz, uint32_t color);
+extern void ApplyViewportGeometry(void);
 
 /* ROM position scale template — 10 ints at 0x503B40, indexed by charId */
 static const int s_resultObjTemplate[10] = {
@@ -598,7 +600,9 @@ static void OptionsMenuScrollDown(void)
 static int IsDisabledGraphicsItem(int itemIndex)
 {
 	switch (itemIndex) {
+#ifndef SONICR_WIDESCREEN
 	case 23:
+#endif
 	case 24:
 	case 25:
 	case 27:
@@ -624,7 +628,7 @@ static void DrawOptionItem(int xPos, int itemIndex)
 		return;
 	}
 
-#if defined(SONICR_DC) || defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_DC) || defined(SONICR_PS3)
 	/* Item 6 (page 0) is "Exit to Windows". On console there is no host desktop to
 	* return to, so the row is drawn empty — the layout and cursor spacing are
 	* kept intact and the cursor still stops here. Selecting it is a no-op
@@ -650,6 +654,14 @@ static void DrawOptionItem(int xPos, int itemIndex)
 		g_uiTexPage + tpageOff,
 		srcX, srcY, 0x80, 0x10,        /* src: 128x16 */
 		VERTEX_WHITE);
+
+#ifdef SONICR_WIDESCREEN
+	if (itemIndex == 23) {
+		const char *str = (g_optCfg_470 == 0) ? "4/3" : "16/9";
+		DrawPixText(str, 0x148, xPos * 2 + 8, 2, VERTEX_WHITE);
+		return;
+	}
+#endif
 
 	/* Value rendering — only for items with hasValue != 0 */
 	if (hasValue == 0) {
@@ -735,8 +747,10 @@ static void DrawOptionItem(int xPos, int itemIndex)
 		case 13: /* item 21: music volume (0-8) */
 			value = g_optMusicVolume;
 			break;
-		case 15: /* item 23: resolution (packed) */
-			value = g_optCfg_468;
+		case 15: /* item 23: aspect ratio */
+#ifdef SONICR_WIDESCREEN
+			value = g_optCfg_470;
+#endif
 			break;
 		case 16: /* item 24: color depth */
 			value = (g_bitsPerPixel != 8) ? 1 : 0;
@@ -1483,7 +1497,24 @@ int OptionsMenuScreen(void)
 								 break;
 					}
 						/* case 14: item 22 — no left/right handler */
-						/* case 15: item 23 — display resolution change (stub for SDL) */
+					case 15: { /* item 23: aspect ratio (0 = 4:3, 1 = 16:9) */
+#ifdef SONICR_WIDESCREEN
+								 int v = g_optCfg_470 + direction;
+								 if (v < 0) {
+									 v = 0;
+								 }
+								 if (v > 1) {
+									 v = 1;
+								 }
+								 if (v != g_optCfg_470) {
+									 g_optCfg_470 = v;
+									 ApplyViewportGeometry();
+									 PlaySoundEffect(1, 0, 0);
+									 lastTime = timeGetTime() / 1000;
+								 }
+#endif
+								 break;
+					}
 						/* case 16: item 24 — color depth change (stub for SDL) */
 					case 17: /* item 25: interlace — software-only, no-op in D3D */
 						break;
@@ -1582,7 +1613,7 @@ int OptionsMenuScreen(void)
 						lastTime = timeGetTime() / 1000;
 						break;
 					case 6: /* Exit to Windows → confirm page — 0x49466d */
-#if defined(SONICR_DC) || defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_DC) || defined(SONICR_PS3)
 						/* No host desktop on console; the row is blank and inert
 						* (see DrawOptionItem). Cursor still lands on it. */
 						break;

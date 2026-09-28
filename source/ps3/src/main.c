@@ -8,12 +8,12 @@
 * Game logic is translated as-is.
 */
 
-#if !defined(_WIN32) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
+#if !defined(_WIN32) && !defined(SONICR_PS3)
 #include <unistd.h>
 #include <getopt.h>
 #endif
 
-#if defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_PS3)
 #define chdir(path) (0)
 #endif
 
@@ -523,7 +523,7 @@ void PostRaceHandling2P(void)
 /* WinMain @ 0x004CDFC4 — 8254 bytes */
 int main(int argc, char *argv[])
 {
-#if defined(SONICR_PS3) || defined(__CELLOS_LV2__) || defined(SN_TARGET_PS3) || defined(__SNC__) || defined(__CELL_ASSERT__) || defined(__PPU__) || defined(_PS3) || defined(PS3) || defined(__PS3__)
+#if defined(SONICR_PS3)
 	extern void ps3_set_exe_path(const char *argv0);
 	if (argc > 0 && argv != NULL && argv[0] != NULL) {
 		ps3_set_exe_path(argv[0]);
@@ -533,7 +533,7 @@ int main(int argc, char *argv[])
 	/* Parse command-line options */
 	const char *dataDir = DATA_DIR;
 
-#if !defined(_WIN32) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
+#if !defined(_WIN32) && !defined(SONICR_PS3)
 	static struct option long_opts[] = {
 		{ "host", required_argument, NULL, 'h' },
 		{ "port", required_argument, NULL, 'p' },

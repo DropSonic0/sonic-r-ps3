@@ -1,13 +1,17 @@
 /**
- * sonicr_globals.h — All global variable declarations
- *
- * Generated from sonicr_annotated.c analysis.
- * Every global is declared here with its original address in a comment.
- * In the final build, these will be defined in sonicr_globals.c.
- */
+* sonicr_globals.h — All global variable declarations
+*
+* Generated from sonicr_annotated.c analysis.
+* Every global is declared here with its original address in a comment.
+* In the final build, these will be defined in sonicr_globals.c.
+*/
 
 #ifndef SONICR_GLOBALS_H
 #define SONICR_GLOBALS_H
+
+#if (defined(SONICR_PS3) || defined(__PS3__)) && !defined(SONICR_WIDESCREEN)
+#define SONICR_WIDESCREEN 1
+#endif
 
 #include "sonicr_types.h"
 #include "player_struct.h"
@@ -23,8 +27,8 @@ extern unsigned char *g_tpageSurfacePtrs[]; /* 0x00625CC0 */
 
 
 /* =====================================================================
- * DirectX Objects
- * ===================================================================== */
+* DirectX Objects
+* ===================================================================== */
 extern void        *g_lpD3DDevice;          /* 0x006300FC — IDirect3DDevice2* */
 extern void        *g_lpDD;                 /* 0x00630104 — IDirectDraw* */
 extern void        *g_lpFrontBuffer;        /* 0x0063010C — IDirectDrawSurface* */
@@ -33,48 +37,48 @@ extern void        *g_lpRenderSurface;      /* 0x00630110 — IDirectDrawSurface
 extern float g_uvLUT256[];                  /* 0x0063fcdc */
 
 /* Seam inset baked into g_uvLUT256 by InitUVLUT, in normalized UV.
- *
- * The table maps an inclusive texel index to a polygon edge: an even index is
- * a low edge addressing texel i, an odd index is a high edge addressing texel
- * i+1. The inset pulls each edge that much toward the polygon interior.
- *
- * The binary's 0.0005 is 0.128 texel of a 256-wide page — just enough to stop
- * float rounding landing on the integer boundary. Under nearest that floors to
- * the intended texel and nothing else about it matters.
- *
- * DC filters most pages bilinear, and PVR puts texel centres at k+0.5, so a
- * 0.128 inset taps the NEIGHBOURING texel at weight 0.5 - 0.128 = 0.372. The
- * pages are gutter-less atlases — RUIN00.RAW packs sandstone directly against
- * grey block against the wood door — so that neighbour is a foreign
- * sub-texture and every polygon edge picks up 37% of it. Insetting a full half
- * texel lands each edge exactly on a texel centre: zero bleed, and identical
- * under nearest, since i+0.5 still floors to i either way.
- *
- * Cost is an (n-1)/n content scale across an n-texel sub-rect — 3% on a 32.
- * The real fix is per-texture pages or a duplicated-edge gutter in the atlas;
- * this is the cheap stand-in until then.
- *
- * ---------------------------------------------------------------------------
- * UV_TEXEL_CENTRE puts EVERY LUT consumer on the texel-centre form — the same
- * math TRACK_UV_LEGACY already gives track surfaces. At a half-texel bias the
- * table's parity term collapses: even i/256 + b and odd (i+1)/256 - b both
- * become (i + 0.5)/256, so the table degenerates to a plain texel-centre
- * lookup and TRACK_UV_LEGACY becomes a no-op.
- *
- * Why that can fix a MENU SEAM: the parity form is index-parity sensitive.
- * Sites that address a span as base and base+N-1 (hud_full.c:395,
- * render_char_sprites.c:137 `g_uvLUT256[uvA + 47]`, weather.c) only get the
- * full span when the high index lands ODD. Flip the base's parity and the high
- * edge is treated as a LOW edge, so the sprite renders one texel short and the
- * neighbouring atlas content shows along that edge. The centre form has no
- * parity term, so every span comes out right regardless of base alignment.
- *
- * Cost is the same 3% shrink, now applied to characters, HUD and sprites too.
- *
- *   UV_TEXEL_CENTRE 0 + TRACK_UV_LEGACY 1 — track centre, rest binary (known good)
- *   UV_TEXEL_CENTRE 0 + TRACK_UV_LEGACY 0 — fully faithful to the binary
- *   UV_TEXEL_CENTRE 1                     — centre everywhere (this experiment)
- * ------------------------------------------------------------------------- */
+*
+* The table maps an inclusive texel index to a polygon edge: an even index is
+* a low edge addressing texel i, an odd index is a high edge addressing texel
+* i+1. The inset pulls each edge that much toward the polygon interior.
+*
+* The binary's 0.0005 is 0.128 texel of a 256-wide page — just enough to stop
+* float rounding landing on the integer boundary. Under nearest that floors to
+* the intended texel and nothing else about it matters.
+*
+* DC filters most pages bilinear, and PVR puts texel centres at k+0.5, so a
+* 0.128 inset taps the NEIGHBOURING texel at weight 0.5 - 0.128 = 0.372. The
+* pages are gutter-less atlases — RUIN00.RAW packs sandstone directly against
+* grey block against the wood door — so that neighbour is a foreign
+* sub-texture and every polygon edge picks up 37% of it. Insetting a full half
+* texel lands each edge exactly on a texel centre: zero bleed, and identical
+* under nearest, since i+0.5 still floors to i either way.
+*
+* Cost is an (n-1)/n content scale across an n-texel sub-rect — 3% on a 32.
+* The real fix is per-texture pages or a duplicated-edge gutter in the atlas;
+* this is the cheap stand-in until then.
+*
+* ---------------------------------------------------------------------------
+* UV_TEXEL_CENTRE puts EVERY LUT consumer on the texel-centre form — the same
+* math TRACK_UV_LEGACY already gives track surfaces. At a half-texel bias the
+* table's parity term collapses: even i/256 + b and odd (i+1)/256 - b both
+* become (i + 0.5)/256, so the table degenerates to a plain texel-centre
+* lookup and TRACK_UV_LEGACY becomes a no-op.
+*
+* Why that can fix a MENU SEAM: the parity form is index-parity sensitive.
+* Sites that address a span as base and base+N-1 (hud_full.c:395,
+* render_char_sprites.c:137 `g_uvLUT256[uvA + 47]`, weather.c) only get the
+* full span when the high index lands ODD. Flip the base's parity and the high
+* edge is treated as a LOW edge, so the sprite renders one texel short and the
+* neighbouring atlas content shows along that edge. The centre form has no
+* parity term, so every span comes out right regardless of base alignment.
+*
+* Cost is the same 3% shrink, now applied to characters, HUD and sprites too.
+*
+*   UV_TEXEL_CENTRE 0 + TRACK_UV_LEGACY 1 — track centre, rest binary (known good)
+*   UV_TEXEL_CENTRE 0 + TRACK_UV_LEGACY 0 — fully faithful to the binary
+*   UV_TEXEL_CENTRE 1                     — centre everywhere (this experiment)
+* ------------------------------------------------------------------------- */
 #define UV_TEXEL_CENTRE  1
 
 #if defined(BLURRY) || UV_TEXEL_CENTRE
@@ -91,12 +95,12 @@ extern unsigned short g_p2ButtonState;      /* 0x00675896 */
 extern unsigned short g_joySlotState[5];    /* 0x00675898..0x006758A0 — per-joystick button states */
 
 /* =====================================================================
- * Input Mapping
- * ===================================================================== */
+* Input Mapping
+* ===================================================================== */
 extern int          g_keyMappingData[20];   /* 0x00676084..0x006760D0 — 10 keys × 2 players.
-                                              * Slot order is fixed by the binary's PollAllInputDevices
-                                              * (0x004769B0): each slot index maps to one bit in the
-                                              * 16-bit player input word. */
+											* Slot order is fixed by the binary's PollAllInputDevices
+											* (0x004769B0): each slot index maps to one bit in the
+											* 16-bit player input word. */
 #define g_keyMap_P1_Start     g_keyMappingData[0]   /* 0x00676084 — bit 0x0800 */
 #define g_keyMap_P1_Left      g_keyMappingData[1]   /* 0x00676088 — bit 0x4000 */
 #define g_keyMap_P1_Right     g_keyMappingData[2]   /* 0x0067608C — bit 0x8000 */
@@ -121,8 +125,8 @@ extern int          g_keyMappingData[20];   /* 0x00676084..0x006760D0 — 10 key
 extern int g_factoryObjState[];             /* 0x0068158c */
 
 /* =====================================================================
- * Network
- * ===================================================================== */
+* Network
+* ===================================================================== */
 extern int g_netFrameCounter;               /* 0x00689b58 */
 extern int g_netPlayerAlive[];              /* 0x00689B9C — per-player keepalive flags [4] */
 extern int g_netDisconnectFlag;             /* 0x00689bb0 */
@@ -130,8 +134,8 @@ extern int g_netServiceProviders[];         /* 0x0068a4e0 */
 extern int g_netFilteredProviders[];        /* 0x0068a6ec */
 extern int g_portraitTextBuffer[];          /* 0x0068a6f0 */
 /* Lobby config broadcast payload, 48 bytes (0x0068a89c..0x0068a8cb), sent whole
- * by UpdateNetworkSync(g_netGameInfoDest, 0x30). [11] carries the MODE A/B bit
- * in its byte 2 (0x0068a8ca) — reach it through net_lobby_mode_b(). */
+* by UpdateNetworkSync(g_netGameInfoDest, 0x30). [11] carries the MODE A/B bit
+* in its byte 2 (0x0068a8ca) — reach it through net_lobby_mode_b(). */
 extern int g_netGameInfoDest[];             /* 0x0068a89c */
 extern short g_netTrackIndex;               /* 0x0068a8a0 */
 extern short g_netRaceSubModeIndex;         /* 0x0068a8a2 */
@@ -162,8 +166,8 @@ extern int g_floatMtxDest[];                /* 0x0068b280 */
 
 
 /* =====================================================================
- * Window / Instance
- * ===================================================================== */
+* Window / Instance
+* ===================================================================== */
 extern HACCEL       g_hAccel;                /* 0x006D987C */
 extern HINSTANCE    g_hInstance;             /* 0x006D9880 */
 extern HINSTANCE    g_hPrevInstance;         /* 0x006D9884 */
@@ -177,8 +181,8 @@ extern HINSTANCE    g_hInstance_dplay;       /* 0x006D99AC */
 extern int          g_renderPass;            /* 0x006D9A4C */
 
 /* =====================================================================
- * Render Mode & Display
- * ===================================================================== */
+* Render Mode & Display
+* ===================================================================== */
 extern int          g_renderMode;           /* 0x006DD860 — RENDER_D3D(1) or RENDER_SOFT(2) */
 extern int          g_bitsPerPixel;         /* 0x006E98B4 — 8, 15, or 16 */
 extern int          g_screenWidth;          /* 0x006E9898 */
@@ -200,8 +204,8 @@ extern int          g_surfaceStride;        /* 0x006E9890 — pixels per row inc
 
 
 /* =====================================================================
- * Frame Timing
- * ===================================================================== */
+* Frame Timing
+* ===================================================================== */
 extern DWORD        g_currentTime;          /* 0x006E9D00 */
 extern int          g_currentFPS;           /* 0x006E9CDC */
 extern int          g_totalFrames;          /* 0x008FB68C */
@@ -210,73 +214,73 @@ extern int          g_frameSkip;            /* 0x008FB80C */
 extern int          g_skipThisFrame;        /* 0x006E9D08 */
 
 /* =====================================================================
- * Polygon Sort & Software Framebuffer
- * ===================================================================== */
+* Polygon Sort & Software Framebuffer
+* ===================================================================== */
 extern int          g_polyCount;            /* 0x008FB358 */
 extern int          g_maxPolyCount;         /* 0x008F7350 */
 
 /* =====================================================================
- * Game State
- * ===================================================================== */
+* Game State
+* ===================================================================== */
 extern int          g_demoMode;             /* 0x008FB8E4 — DEMO_NONE/DEMO_TITLE/DEMO_REPLAY */
 extern int          g_trackId;              /* 0x008FB8EC — 1-5 */
 enum {
-    RACE_GP           = 0,
-    RACE_MULTIPLAYER  = 1,
-    RACE_TIMEATTACK   = 2,
-    RACE_SPECIAL      = 3,
-    RACE_CHAMPIONSHIP = 4,
+	RACE_GP = 0,
+	RACE_MULTIPLAYER = 1,
+	RACE_TIMEATTACK = 2,
+	RACE_SPECIAL = 3,
+	RACE_CHAMPIONSHIP = 4,
 };
 extern int          g_raceType;             /* 0x008FB950 */
 extern int          g_raceSubMode;          /* 0x008FB954 — SUBMODE_NORMAL..SUBMODE_BALLOON */
 /* ============================================================================
- * NETWORK GAME FLAGS — READ THIS BEFORE USING EITHER FLAG
- * ============================================================================
- *
- * g_netSessionActive and g_isNetworkGame are BOTH network-game flags — neither
- * has anything to do with local 2P split-screen multi (that is gated by
- * g_raceType == RACE_TYPE_MULTIPLAYER / g_isMultiRace, NOT by these flags).
- *
- * The two flags exist because they track DIFFERENT STATES of the network
- * connection lifecycle. They are NOT aliases — do not substitute one for
- * the other based on "they're always equal" intuition, because they diverge
- * transiently at well-defined moments.
- *
- *   g_netSessionActive  ←  "a DirectPlay session is currently live"
- *     SET by DP session-established callbacks at 0x487c53 (host side) and
- *     0x4d9494 (client side) — these can fire DURING NetworkScreen's event
- *     loop, before the user has committed to a race. Also set alongside
- *     g_isNetworkGame at WinMain 0x4ce785 after NetworkScreen returns OK.
- *     CLEARED aggressively at nearly every path boundary: LoadGameState
- *     (0x4cdb94), top of WinMain loop (0x4ce4eb), after single-player course
- *     select (0x4ce95c), post-race teardown (0x4cf9b6), NetworkScreen entry
- *     (0x48a8d6), etc. Treat as a transient session-liveness flag.
- *
- *   g_isNetworkGame  ←  "we have committed to playing a network race"
- *     SET only at WinMain 0x4ce790, after NetworkScreen returns success and
- *     we are building the race. CLEARED only at explicit teardown points
- *     (0x4ceefd paired teardown, 0x4cfa76 post-race). Treat as a sticky
- *     mode flag that persists across the race.
- *
- * The two flags diverge in well-known windows, and these windows matter:
- *   (a) During NetworkScreen's event loop, after a DP callback fires but
- *       before NetworkScreen returns: g_netSessionActive=1, g_isNetworkGame=0.
- *   (b) During post-race teardown between 0x4cf9b6 and 0x4cfa76:
- *       g_netSessionActive=0, g_isNetworkGame=1 (briefly).
- *
- * Many sites OR both flags together (`g_netSessionActive || g_isNetworkGame`)
- * to catch "any form of network game, at any point in its lifecycle". That
- * pattern is correct — don't simplify it to a single flag.
- *
- * When TRANSLATING from binary: the original writes [0x68af18] for
- * g_netSessionActive and [0x6d9a44] for g_isNetworkGame. Several file-local
- * extern declarations were historically mis-labelled with swapped addresses
- * (e.g. a line reading "extern int g_isNetworkGame; // 0x68AF18") — the
- * name resolves correctly by linkage to the globals.c definition, but the
- * LOGIC in those sites tested the wrong variable. If you see a new site
- * testing only one of these flags, verify against the binary which address
- * is actually being read.
- * ============================================================================ */
+* NETWORK GAME FLAGS — READ THIS BEFORE USING EITHER FLAG
+* ============================================================================
+*
+* g_netSessionActive and g_isNetworkGame are BOTH network-game flags — neither
+* has anything to do with local 2P split-screen multi (that is gated by
+* g_raceType == RACE_TYPE_MULTIPLAYER / g_isMultiRace, NOT by these flags).
+*
+* The two flags exist because they track DIFFERENT STATES of the network
+* connection lifecycle. They are NOT aliases — do not substitute one for
+* the other based on "they're always equal" intuition, because they diverge
+* transiently at well-defined moments.
+*
+*   g_netSessionActive  ←  "a DirectPlay session is currently live"
+*     SET by DP session-established callbacks at 0x487c53 (host side) and
+*     0x4d9494 (client side) — these can fire DURING NetworkScreen's event
+*     loop, before the user has committed to a race. Also set alongside
+*     g_isNetworkGame at WinMain 0x4ce785 after NetworkScreen returns OK.
+*     CLEARED aggressively at nearly every path boundary: LoadGameState
+*     (0x4cdb94), top of WinMain loop (0x4ce4eb), after single-player course
+*     select (0x4ce95c), post-race teardown (0x4cf9b6), NetworkScreen entry
+*     (0x48a8d6), etc. Treat as a transient session-liveness flag.
+*
+*   g_isNetworkGame  ←  "we have committed to playing a network race"
+*     SET only at WinMain 0x4ce790, after NetworkScreen returns success and
+*     we are building the race. CLEARED only at explicit teardown points
+*     (0x4ceefd paired teardown, 0x4cfa76 post-race). Treat as a sticky
+*     mode flag that persists across the race.
+*
+* The two flags diverge in well-known windows, and these windows matter:
+*   (a) During NetworkScreen's event loop, after a DP callback fires but
+*       before NetworkScreen returns: g_netSessionActive=1, g_isNetworkGame=0.
+*   (b) During post-race teardown between 0x4cf9b6 and 0x4cfa76:
+*       g_netSessionActive=0, g_isNetworkGame=1 (briefly).
+*
+* Many sites OR both flags together (`g_netSessionActive || g_isNetworkGame`)
+* to catch "any form of network game, at any point in its lifecycle". That
+* pattern is correct — don't simplify it to a single flag.
+*
+* When TRANSLATING from binary: the original writes [0x68af18] for
+* g_netSessionActive and [0x6d9a44] for g_isNetworkGame. Several file-local
+* extern declarations were historically mis-labelled with swapped addresses
+* (e.g. a line reading "extern int g_isNetworkGame; // 0x68AF18") — the
+* name resolves correctly by linkage to the globals.c definition, but the
+* LOGIC in those sites tested the wrong variable. If you see a new site
+* testing only one of these flags, verify against the binary which address
+* is actually being read.
+* ============================================================================ */
 extern int          g_isNetworkGame;        /* 0x006D9A44 — committed to network race (sticky); see block comment above */
 extern int          g_numPlayers;           /* 0x006E990C — 1-5 */
 extern int          g_numHumans;            /* 0x006E9908 — 1-4 */
@@ -284,11 +288,11 @@ extern int          g_numViewports;         /* 0x006E9910 — 1-4 */
 extern int          g_mirrorMode;           /* 0x006E9920 */
 
 /* =====================================================================
- * Save Data Block — contiguous 2216-byte (554 int) block at 0x8FBA4C.
- * The binary saves/loads this as a single blob. All named fields below
- * are #define accessors into g_saveBlock to preserve the binary's
- * intentional aliasing (e.g. charUnlockTable[4] == trackUnlockState).
- * ===================================================================== */
+* Save Data Block — contiguous 2216-byte (554 int) block at 0x8FBA4C.
+* The binary saves/loads this as a single blob. All named fields below
+* are #define accessors into g_saveBlock to preserve the binary's
+* intentional aliasing (e.g. charUnlockTable[4] == trackUnlockState).
+* ===================================================================== */
 extern int          g_saveBlock[554];       /* 0x008FBA4C — canonical save data */
 #define g_gpTrackStatus      g_saveBlock          /* 0x8FBA4C — GP track/char status, [20] */
 #define g_aiBlock            g_saveBlock          /* 0x8FBA4C — AI state block alias */
@@ -299,30 +303,30 @@ extern int          g_saveBlock[554];       /* 0x008FBA4C — canonical save dat
 #define g_allCharsRaceUnlock g_saveBlock[5]       /* 0x8FBA60 */
 
 /* Character-select ROM data (0x502648) — ONE region under two bases.
- * g_charSelViewportPos starts six ints inside g_aiCharAssignment, so
- * ai[6..9] and vp[0..3] are the same memory. The AI assignment loop really
- * does read that far when nothing is unlocked — see globals_extra.c. */
+* g_charSelViewportPos starts six ints inside g_aiCharAssignment, so
+* ai[6..9] and vp[0..3] are the same memory. The AI assignment loop really
+* does read that far when nothing is unlocked — see globals_extra.c. */
 extern int g_charSelDataBlock[];                    /* 0x00502648, [26] */
 #define g_aiCharAssignment   (&g_charSelDataBlock[0])  /* 0x502648, [10] */
 #define g_charSelViewportPos (&g_charSelDataBlock[6])  /* 0x502660, [20] */
 
 /* Character unlock table (0x8FBA64-0x8FBA88) — 10 entries, chars 0-9.
- * Entries [4]-[9] intentionally alias gpState/collect/titleCam below. */
+* Entries [4]-[9] intentionally alias gpState/collect/titleCam below. */
 #define g_charUnlockTable    (&g_saveBlock[6])    /* 0x8FBA64, [10] */
 
 /* GP / collectible state (0x8FBA74-0x8FBA94) — aliases charUnlockTable[4+] */
 #define g_gpStateBlock       (&g_saveBlock[10])   /* 0x8FBA74, [8] */
 
 /* g_trackUnlockState and g_gpRelayFlag used to name g_saveBlock[10] here.
- * Both were WRITE-ONLY — nothing ever read the slot under either name, and
- * both sound like track/relay state when 0x8FBA74 is in fact
- * g_charUnlockTable[4]: Eggman's unlock flag. 1 = locked (fresh save),
- * 2 = unlocked, set on winning Radiant Emerald (race_setup.c, binary
- * 0x4c48ac). Its only reader is the char-select skip-locked cursor
- * (`g_charUnlockTable[n] != 2`, binary 0x48d302). Both writers now say
- * g_charUnlockTable[CHAR_EGGMAN]; do not reintroduce the old names. */
+* Both were WRITE-ONLY — nothing ever read the slot under either name, and
+* both sound like track/relay state when 0x8FBA74 is in fact
+* g_charUnlockTable[4]: Eggman's unlock flag. 1 = locked (fresh save),
+* 2 = unlocked, set on winning Radiant Emerald (race_setup.c, binary
+* 0x4c48ac). Its only reader is the char-select skip-locked cursor
+* (`g_charUnlockTable[n] != 2`, binary 0x48d302). Both writers now say
+* g_charUnlockTable[CHAR_EGGMAN]; do not reintroduce the old names. */
 /* Gates the title-screen logo spin, and so mirror mode. Tested as
- * dword [0x8FBA4C] == 1 at 0x4dd5fe. Same slot as g_gpTrackStatus[0]. */
+* dword [0x8FBA4C] == 1 at 0x4dd5fe. Same slot as g_gpTrackStatus[0]. */
 #define g_titleLogoEnabled    g_saveBlock[0]       /* 0x8FBA4C */
 #define g_collectUnlock      (&g_saveBlock[12])   /* 0x8FBA7C = charUnlockTable[6], [5] */
 #define g_allCharsUnlocked   g_saveBlock[15]      /* 0x8FBA88 = charUnlockTable[9] */
@@ -344,10 +348,10 @@ extern int g_charSelDataBlock[];                    /* 0x00502648, [26] */
 #define g_lapTime5Lap        (&g_saveBlock[58])   /* 0x8FBB34, [6] */
 
 /* Same eight tables under the names CalculateChampionshipPoints uses, where
- * they are indexed by trackId-1 rather than trackId. Binary 0x8FBAA8-0x8FBB34
- * is inside the save block, so these must share storage with the g_lapTime*
- * views above — InitDefaultTimeTables seeds them and the scoring pass compares
- * against them. */
+* they are indexed by trackId-1 rather than trackId. Binary 0x8FBAA8-0x8FBB34
+* is inside the save block, so these must share storage with the g_lapTime*
+* views above — InitDefaultTimeTables seeds them and the scoring pass compares
+* against them. */
 #define g_gpTrackBestA       (&g_saveBlock[23])   /* 0x8FBAA8 — = g_lapTimeB */
 #define g_gpTrackBestB       (&g_saveBlock[28])   /* 0x8FBABC — = g_lapTimeC */
 #define g_gpTrackBestC       (&g_saveBlock[33])   /* 0x8FBAD0 — = g_lapTimeD */
@@ -358,43 +362,43 @@ extern int g_charSelDataBlock[];                    /* 0x00502648, [26] */
 #define g_gpTrackBestH       (&g_saveBlock[58])   /* 0x8FBB34 — = g_lapTime5Lap */
 
 /* Per-player championship standings (0x8FBB88), capped at 99. Binary users are
- * CalculateChampionshipPoints (0x4C455E/456C/462D/463A) and both
- * DrawResultChampPoints twins (0x4C55EB, 0x4C5F61) — not "best times".
- * Was also declared as a standalone int[4] in globals_extra.c, which split the
- * storage: the increments never reached the save block and the reset never
- * cleared what was read. */
+* CalculateChampionshipPoints (0x4C455E/456C/462D/463A) and both
+* DrawResultChampPoints twins (0x4C55EB, 0x4C5F61) — not "best times".
+* Was also declared as a standalone int[4] in globals_extra.c, which split the
+* storage: the increments never reached the save block and the reset never
+* cleared what was read. */
 #define g_gpPlayerStandings  (&g_saveBlock[79])   /* 0x8FBB88, [4] */
 
 /* Per-character per-track GP win record at 0x8FBB94, [51]. Indexed
- * [charId * 5 + trackId] with 1-based track ids (Island 1 .. Emerald 5), so
- * charId 9 (Super Sonic) on track 5 reaches index 50 — the table needs 51
- * slots, not 50. Index 0 is never addressed: that int is g_gpPlayerStandings[3].
- *   0x4C486C — [edx + eax*4 + 0x8FBB94] with edx = trackId*4, eax = charId*5
- *   0x470EF2 — clear loop, 10 rows × 20 bytes, byte offsets 4..20 per row
- * The same 50 written ints appear in the binary under a second name whose
- * clear is translated in save.c; both #defined here so writes via either name
- * are visible to readers via the other. g_checkpointBestTimes is the clear-loop
- * view and starts one int later, at the first addressed slot. */
+* [charId * 5 + trackId] with 1-based track ids (Island 1 .. Emerald 5), so
+* charId 9 (Super Sonic) on track 5 reaches index 50 — the table needs 51
+* slots, not 50. Index 0 is never addressed: that int is g_gpPlayerStandings[3].
+*   0x4C486C — [edx + eax*4 + 0x8FBB94] with edx = trackId*4, eax = charId*5
+*   0x470EF2 — clear loop, 10 rows × 20 bytes, byte offsets 4..20 per row
+* The same 50 written ints appear in the binary under a second name whose
+* clear is translated in save.c; both #defined here so writes via either name
+* are visible to readers via the other. g_checkpointBestTimes is the clear-loop
+* view and starts one int later, at the first addressed slot. */
 #define g_gpCharTrackWins     (&g_saveBlock[82])  /* 0x8FBB94, [51] */
 #define g_checkpointBestTimes (&g_saveBlock[83])  /* 0x8FBB98, [50] — alias */
 
 /* Per-character race/time data at 0x8FBC60, [10]. Same memory region used
- * under two names in the binary:
- *   g_raceTimeTable  — cleared on save init (save.c)
- *   g_gpCharRaceCount — per-character race count, capped at 99 (race_setup.c)
- * Both #defined into g_saveBlock so writes via either name are visible to
- * readers via the other — previously disjoint standalone arrays. */
+* under two names in the binary:
+*   g_raceTimeTable  — cleared on save init (save.c)
+*   g_gpCharRaceCount — per-character race count, capped at 99 (race_setup.c)
+* Both #defined into g_saveBlock so writes via either name are visible to
+* readers via the other — previously disjoint standalone arrays. */
 #define g_raceTimeTable      (&g_saveBlock[133])  /* 0x8FBC60, [10] */
 #define g_gpCharRaceCount    (&g_saveBlock[133])  /* 0x8FBC60, [10] — alias */
 
 /* Per-checkpoint / per-character best-time table — two aliases into the same
- * save block region. Binary address 0x8FBC84 (g_cpTableA) / 0x8FBC88
- * (g_gpCharDetail) sit one int apart in the same 411-int table; both names
- * are used in the binary for different access patterns (checkpoint column
- * math vs. 41-stride per-character row math). The port previously had
- * g_gpCharDetail as a separate standalone array — that was an address-alias
- * bug; writes via one name didn't show up in reads via the other. Now
- * unified: both names index into g_saveBlock. */
+* save block region. Binary address 0x8FBC84 (g_cpTableA) / 0x8FBC88
+* (g_gpCharDetail) sit one int apart in the same 411-int table; both names
+* are used in the binary for different access patterns (checkpoint column
+* math vs. 41-stride per-character row math). The port previously had
+* g_gpCharDetail as a separate standalone array — that was an address-alias
+* bug; writes via one name didn't show up in reads via the other. Now
+* unified: both names index into g_saveBlock. */
 #define g_cpTableA           (&g_saveBlock[142])  /* 0x8FBC84, [411] */
 #define g_gpCharDetail       (&g_saveBlock[143])  /* 0x8FBC88, [410] */
 
@@ -402,15 +406,15 @@ extern int g_charSelDataBlock[];                    /* 0x00502648, [26] */
 #define g_saveStateFlag      g_saveBlock[553]      /* 0x8FC2F0 */
 
 /* =====================================================================
- * Fade System
- * ===================================================================== */
+* Fade System
+* ===================================================================== */
 extern int          g_fadeState;            /* 0x00901C48 */
 extern int          g_fadeLevel;            /* 0x00901C44 */
 extern int          g_fadeSpeed;            /* 0x00901C4C */
 
 /* =====================================================================
- * Race State
- * ===================================================================== */
+* Race State
+* ===================================================================== */
 extern int          g_raceResult;           /* 0x00901C10 */
 extern int          g_raceFinished;         /* 0x00901C88 */
 extern int          g_raceCheckpoint;       /* 0x00901C78 */
@@ -425,23 +429,23 @@ extern int          g_isPaused;             /* 0x00901C30 */
 extern int          g_pauseLatch;           /* 0x00901C34 */
 
 /* =====================================================================
- * Screen / Menu
- * ===================================================================== */
+* Screen / Menu
+* ===================================================================== */
 /* g_screenResult (0x925418) and g_modelRotation (0x92528C) live inside the
- * 0x92528C state block — declared with the rest of it further down. */
+* 0x92528C state block — declared with the rest of it further down. */
 extern unsigned char g_inputBits;           /* 0x009020D9 */
 extern unsigned short g_perPlayerInput[4];  /* 0x009020C8 — per-player input state words */
 extern unsigned short g_combinedInputState; /* 0x009020D8 */
 
 /* Bits of the pad word above (PAD_JUMP, PAD_LEFT, PAD_DIRECTIONS, ...).
- * Separate header so the platform layers can have them without pulling in
- * all of sonicr_globals.h. Note g_inputBits directly above is a DIFFERENT
- * bit set with colliding values — pad_bits.h explains. */
+* Separate header so the platform layers can have them without pulling in
+* all of sonicr_globals.h. Note g_inputBits directly above is a DIFFERENT
+* bit set with colliding values — pad_bits.h explains. */
 #include "pad_bits.h"
 
 /* =====================================================================
- * Math Tables
- * ===================================================================== */
+* Math Tables
+* ===================================================================== */
 extern int          g_sinTable[5120];       /* 0x0092568C — extra 1024 for cosTable wrap */
 extern int         *g_cosTable;             /* 0x0051E074 — &g_sinTable[1024] */
 
@@ -450,8 +454,8 @@ extern int          g_nextLoadTpage;
 extern const char  *g_nextLoadFilename;
 
 /* =====================================================================
- * Model / Track Data
- * ===================================================================== */
+* Model / Track Data
+* ===================================================================== */
 extern int          g_modelCount;           /* 0x00713060 */
 extern int          g_modelLimbCount;       /* 0x00713064 */
 extern int          g_modelVertexCount;     /* 0x00713068 */
@@ -491,15 +495,15 @@ extern int          g_emeraldSineOffY;      /* 0x00712D6C */
 extern int          g_emeraldSineOffZ;      /* 0x00712D70 */
 
 /* =====================================================================
- * Character Data
- * ===================================================================== */
+* Character Data
+* ===================================================================== */
 extern int         *g_charStatsTable;       /* 0x005016B4 — stride 0x28 */
 extern void        *g_charAnimTables;       /* 0x004FBDF8 */
 /* g_charUnlockTable and g_allCharsUnlocked are now #defines into g_saveBlock */
 
 /* =====================================================================
- * Ghost Replay
- * ===================================================================== */
+* Ghost Replay
+* ===================================================================== */
 extern int          g_ghostDataExists;      /* 0x008FB960 */
 extern int          g_ghostCharId;          /* 0x008FB964 */
 extern int          g_replayCharIds[];      /* 0x008FB980 — 5 sign-extended charIds per player slot */
@@ -508,8 +512,8 @@ extern int          g_ghostReadIndex;       /* 0x00901CDC */
 extern int          g_ghostMaxFrames;       /* 0x00901CE0 */
 
 /* =====================================================================
- * Sound
- * ===================================================================== */
+* Sound
+* ===================================================================== */
 extern void        *g_lpDirectSound;        /* 0x006D9AE8 — IDirectSound* */
 extern int          g_masterVolume;         /* 0x006DA29C */
 extern int          g_mciDeviceId;          /* 0x006DA28C */
@@ -517,29 +521,29 @@ extern int          g_mciDeviceId;          /* 0x006DA28C */
 
 
 /* =====================================================================
- * Player
- * ===================================================================== */
+* Player
+* ===================================================================== */
 extern Player      *g_playerBase;          /* 0x008FD4F4 — first player struct */
 
 /* -----------------------------------------------------------------
- * Player-struct aliased globals.
- *
- * The binary declares these as "global labels" that happen to be at
- * addresses INSIDE the player 0 struct. In the binary, writes via
- * `players[0].field = X` and writes via `*(int*)0x8fd550 = X` refer
- * to the same memory. The C port must reflect this aliasing or
- * reads from the global won't see struct updates (and vice versa).
- *
- *   g_racePlacement    @ 0x008FD550 = player[0] + 0x5C = racePosition
- *   g_raceLapFinished  @ 0x008FD552 = player[0] + 0x5E = lapsCompleted
- *
- * These are just g_playerBase[0].racePosition and
- * g_playerBase[0].lapsCompleted — use those directly.
- * ----------------------------------------------------------------- */
+* Player-struct aliased globals.
+*
+* The binary declares these as "global labels" that happen to be at
+* addresses INSIDE the player 0 struct. In the binary, writes via
+* `players[0].field = X` and writes via `*(int*)0x8fd550 = X` refer
+* to the same memory. The C port must reflect this aliasing or
+* reads from the global won't see struct updates (and vice versa).
+*
+*   g_racePlacement    @ 0x008FD550 = player[0] + 0x5C = racePosition
+*   g_raceLapFinished  @ 0x008FD552 = player[0] + 0x5E = lapsCompleted
+*
+* These are just g_playerBase[0].racePosition and
+* g_playerBase[0].lapsCompleted — use those directly.
+* ----------------------------------------------------------------- */
 
 /* =====================================================================
- * Texture Pages
- * ===================================================================== */
+* Texture Pages
+* ===================================================================== */
 extern int          g_uiTexPage;            /* 0x008F6C48 */
 extern int          g_tpagePlayfield1;      /* 0x008F6C34 */
 extern int          g_tpagePlayfield2;      /* 0x008F6C2C */
@@ -557,15 +561,15 @@ extern int          g_tpageBase;            /* 0x008F6C50 */
 extern int          g_shutdownStarted;      /* 0x006D9ACC */
 
 /* =====================================================================
- * AI / Track
- * ===================================================================== */
+* AI / Track
+* ===================================================================== */
 extern void        *g_trackSurfaceData;     /* 0x006DA564 */
 extern void        *g_splineWaypoints;      /* 0x009024A0 */
 extern void        *g_waypointDataBase;     /* 0x00540064 */
 extern void        *g_aiGridGround;         /* 0x00540070 */
 /* 0x540048/4A/4C are three packed 16-bit fields; every binary access to each
- * is 16-bit and readers zero-extend, so they are unsigned. 0x540050 above
- * them is a genuine 32-bit int. */
+* is 16-bit and readers zero-extend, so they are unsigned. 0x540050 above
+* them is a genuine 32-bit int. */
 extern unsigned short g_baseSpeedFactor;    /* 0x00540048 — aliased as g_rbBaseSpeed */
 extern int          g_aiTurnThreshold;      /* 0x00540060 — canonical (aliased as g_rbTrackLen) */
 extern int          g_aiGridOriginX;        /* 0x006DA5E0 */
@@ -574,13 +578,13 @@ extern int          g_aiGridCellWidth;      /* 0x006DA5E8 */
 extern int          g_aiGridCellHeight;     /* 0x006DA5EC */
 
 /* =====================================================================
- * Camera / float scales
- * ===================================================================== */
+* Camera / float scales
+* ===================================================================== */
 extern sr_double    g_fixedToFloat;          /* 0x0051FCA0 — double in original */
 extern sr_double    g_angleToRadians;        /* 0x0051FCA8 — double in original */
 
 /* View matrix — stride-4 layout matching binary (4 ints per row, 3 used + 1 padding).
- * Binary: 0x6E9C44/48/4C row0, 0x6E9C54/58/5C row1, 0x6E9C64/68/6C row2. */
+* Binary: 0x6E9C44/48/4C row0, 0x6E9C54/58/5C row1, 0x6E9C64/68/6C row2. */
 extern int          g_viewMtx[16];          /* 0x006E9C44 */
 #ifdef SONICR_DC
 extern float        g_viewMtxF[16];         /* DC: float copy, /4096 baked in (BuildViewMatrix) */
@@ -601,8 +605,8 @@ extern int          g_camIntZ;              /* 0x006E9C98 */
 
 
 /* =====================================================================
- * Title Screen State
- * ===================================================================== */
+* Title Screen State
+* ===================================================================== */
 extern int          g_pressStartColorR[4];       /* 0x00507630 — interpolated R per corner */
 extern int          g_pressStartColorG[4];       /* 0x00507640 — interpolated G per corner */
 extern int          g_pressStartColorB[4];       /* 0x00507650 — interpolated B per corner */
@@ -627,8 +631,8 @@ extern int          g_titleLogoRotRoll;         /* 0x008F708C */
 extern int          g_cdPlaybackActive;     /* 0x006DA294 */
 
 /* =====================================================================
- * Unlock Screen State
- * ===================================================================== */
+* Unlock Screen State
+* ===================================================================== */
 extern const short *g_animDataPtrs[10];     /* 64-bit side-storage for player anim cursors */
 extern int          g_creditsTpageSlots[4];  /* 0x006DA61C — tpage indices {2,3,4,5} */
 extern int          g_creditsStepCounter;    /* 0x006DA62C */
@@ -636,11 +640,11 @@ extern int          g_creditsStateFlag;      /* 0x006DA630 */
 extern short        g_creditsFontGlyphs[3][256][3]; /* 0x006DA634 — font glyph tables */
 
 /* =====================================================================
- * Additional globals (defined in globals_extra.c)
- *
- * These are the canonical definitions for globals that have shared-address
- * aliases (see alias block below).
- * ===================================================================== */
+* Additional globals (defined in globals_extra.c)
+*
+* These are the canonical definitions for globals that have shared-address
+* aliases (see alias block below).
+* ===================================================================== */
 extern int g_difficultyConfig;             /* 0x008fd444 */
 extern int g_ghostToggle;                  /* 0x008FD448 */
 extern int g_weatherConfig;                /* 0x008fd44c */
@@ -654,7 +658,7 @@ extern int g_vocalsEnabled;                /* 0x008FD498 */
 extern int g_optSfxVolume;                 /* 0x008FD49C — SFX volume, 0-8 (0 = off) */
 extern int g_musicEnabled;                 /* 0x008FD4A0 — derived: g_optMusicVolume != 0 */
 extern int g_optMusicVolume;               /* music volume 0-8 (0 = off) — port addition,
-                                            * no VMA; the original option is a toggle */
+										   * no VMA; the original option is a toggle */
 extern int g_rubberBandLowerBound;         /* 0x00540050 */
 extern void *g_terCollisionMesh;           /* 0x006DA568 */
 extern void *g_itemStateTable;             /* 0x006DA578 */
@@ -668,24 +672,24 @@ extern unsigned short *g_ringSpawnReadPtr; /* 0x00901CD0 */
 extern CamStateEntry g_camStateTable[];    /* 0x00902140 — 4 viewports × 40 bytes */
 extern ModelMeta g_modelMeta[];            /* 0x007130A4 — 26 entries, stride 0x50 */
 /* =====================================================================
- * State block at 0x0092528C — 151 ints, 0x92528C..0x9254E4.
- *
- * A general scratch region, NOT character-select state. Menu screens,
- * track-object animation, device enumeration and screen plumbing all live
- * here, because only one of them is active at a time. Multiple names on one
- * slot are real reuse and are listed together rather than hidden behind a
- * rename. The extent is where the binary's references stop: 0x9254E4 is the
- * last address referenced, followed by a 65-int gap.
- *
- * ONLY THE FIRST 128 INTS ARE CLEARED AT TRACK INIT. The loop at 0x472480 —
- *     xor eax,eax / add eax,4 / mov [eax+0x925288],ecx / cmp eax,0x200 / jne
- * walks eax 4..0x200, so it covers 0x92528C..0x925488 and stops. Slots [128]
- * and above are deliberately outside it; each of their tenants initialises
- * its own slots on entry. Do not widen that loop to the array size.
- *
- * Every alias indexes the block directly — no name resolves through another
- * name. Block index = (address - 0x92528C) / 4.
- * ===================================================================== */
+* State block at 0x0092528C — 151 ints, 0x92528C..0x9254E4.
+*
+* A general scratch region, NOT character-select state. Menu screens,
+* track-object animation, device enumeration and screen plumbing all live
+* here, because only one of them is active at a time. Multiple names on one
+* slot are real reuse and are listed together rather than hidden behind a
+* rename. The extent is where the binary's references stop: 0x9254E4 is the
+* last address referenced, followed by a 65-int gap.
+*
+* ONLY THE FIRST 128 INTS ARE CLEARED AT TRACK INIT. The loop at 0x472480 —
+*     xor eax,eax / add eax,4 / mov [eax+0x925288],ecx / cmp eax,0x200 / jne
+* walks eax 4..0x200, so it covers 0x92528C..0x925488 and stops. Slots [128]
+* and above are deliberately outside it; each of their tenants initialises
+* its own slots on entry. Do not widen that loop to the array size.
+*
+* Every alias indexes the block directly — no name resolves through another
+* name. Block index = (address - 0x92528C) / 4.
+* ===================================================================== */
 extern int          g_stateBlock92528C[151]; /* 0x0092528C */
 
 /* [0] 0x92528C — course-select player count / DirectPlay provider choice */
@@ -693,7 +697,7 @@ extern int          g_stateBlock92528C[151]; /* 0x0092528C */
 #define g_netProviderChoice g_stateBlock92528C[0]
 
 /* [1]-[12] 0x925290-0x9252BC — menu cursor/scroll state, the track-object
- * angle counters, and the particle-spawn countdowns, all reusing these slots. */
+* angle counters, and the particle-spawn countdowns, all reusing these slots. */
 #define g_menuExtraY        g_stateBlock92528C[1]    /* 0x925290 */
 #define g_inputCaptureGate  g_stateBlock92528C[1]    /* 0x925290 — key-capture debounce */
 #define g_particleSpawnStep1 g_stateBlock92528C[2]   /* 0x925294 — countdown, source A */
@@ -726,7 +730,7 @@ extern int          g_stateBlock92528C[151]; /* 0x0092528C */
 #define g_animStateD8       g_stateBlock92528C[19]   /* 0x9252D8 */
 
 /* [20]-[23] 0x9252DC-0x9252E8 — per-player device type, and the animation
- * state that shares the same four slots. */
+* state that shares the same four slots. */
 #define g_playerDeviceType  (&g_stateBlock92528C[20]) /* 0x9252DC — int[4] */
 #define g_animStateE0       g_stateBlock92528C[21]   /* 0x9252E0 */
 #define g_animStateE4       g_stateBlock92528C[22]   /* 0x9252E4 */
@@ -757,12 +761,12 @@ extern int          g_stateBlock92528C[151]; /* 0x0092528C */
 #define g_screenResult      g_stateBlock92528C[99]   /* 0x925418 — value every screen function returns */
 
 /* [128]-[150] 0x92548C-0x9254E4 — above the track-init clear.
- *
- * Three subsystems reuse [128] across their own lifetimes: the DirectInput
- * device-enumeration counter at startup (callback 0x477EE4 increments it,
- * 0x47804D zeroes it first, 0x478067 reads the total), the City sign-physics
- * active flag during a race, and the results-screen button cursor. Each
- * initialises the slot itself, which is why nothing bulk-clears this range. */
+*
+* Three subsystems reuse [128] across their own lifetimes: the DirectInput
+* device-enumeration counter at startup (callback 0x477EE4 increments it,
+* 0x47804D zeroes it first, 0x478067 reads the total), the City sign-physics
+* active flag during a race, and the results-screen button cursor. Each
+* initialises the slot itself, which is why nothing bulk-clears this range. */
 #define g_animState48C      g_stateBlock92528C[128]  /* 0x92548C — sign block A active */
 #define g_animState490      g_stateBlock92528C[129]  /* 0x925490 — block A velocity X */
 #define g_animState494      g_stateBlock92528C[130]  /* 0x925494 — block A gravity */
@@ -786,23 +790,26 @@ extern int          g_stateBlock92528C[151]; /* 0x0092528C */
 
 /* g_rbBaseSpeed removed — alias for g_baseSpeedFactor (0x00540048), see #define below */
 /* 0x009020EC — one of the input-state words the track-init clear treats as a
- * group with 0x9020E2..0x9020EA. Every one of its seven binary accesses is
- * 16-bit (all carry a 0x66 prefix), and 0x9020EE is never referenced. */
+* group with 0x9020E2..0x9020EA. Every one of its seven binary accesses is
+* 16-bit (all carry a 0x66 prefix), and 0x9020EE is never referenced. */
 extern short        g_inputStateEC;         /* 0x009020EC */
 extern void        *g_terLoopTable;        /* 0x006DA570 — loop/ride surface table: TerLoopEntry[] */
 extern int          g_lightingDepthTable[]; /* 0x0050A294 */
 
 /* =====================================================================
- * Shared-address aliases
- *
- * In the original binary, each pair below occupied the SAME memory address.
- * The "canonical" name is the real definition; the alias is a #define so
- * that code using either name compiles and resolves to one storage location.
- * ===================================================================== */
+* Shared-address aliases
+*
+* In the original binary, each pair below occupied the SAME memory address.
+* The "canonical" name is the real definition; the alias is a #define so
+* that code using either name compiles and resolves to one storage location.
+* ===================================================================== */
 
 /* Same type, same address */
 #define g_interlaceMode     g_softDoubleBuf         /* 0x008FD478 */
 #define g_optCfg_488        g_emeraldRenderFlag     /* 0x008FD488 */
+#ifdef SONICR_WIDESCREEN
+#define g_aspectMode        g_optCfg_470            /* 0x008FD470 — 0 = 4:3, 1 = 16:9 */
+#endif
 #define g_initFlag8fd490    g_doubleWidthFlag       /* 0x008FD490 */
 #define g_rbThreshold       g_rubberBandLowerBound  /* 0x00540050 */
 #define g_rbBaseSpeed       g_baseSpeedFactor       /* 0x00540048 — same variable */
@@ -831,7 +838,7 @@ extern char g_tpageStateArray[];
 
 extern int g_raceOrder[];   /* 0x902070 — [3]=doorTrigger, [4]=debrisGate, [5]=debrisPlayerIdx */
 /* 0x902074-0x902090 = g_raceOrder[1..8] — cycling counters inside the race order array.
- * ComputeRacePositions reads g_raceOrder[numPlayers] to pick which player to update. */
+* ComputeRacePositions reads g_raceOrder[numPlayers] to pick which player to update. */
 
 /* ==== Graduated globals (automated extern pass) ==== */
 extern intptr_t g_animRegTable[];          /* 0x00676ff0 */
@@ -873,9 +880,9 @@ extern int g_cdAvailable;          /* 0x00504278 */
 
 extern int g_ghostTotalFrames;          /* 0x008fb95c */
 /* Capacity of g_taGhostBuffer. Recording is bounded by g_ghostMaxFrames
- * (0x8000 / numViewports) instead, which is larger, so any frame count reaching
- * the buffer has to be clamped to this. Must match the definition in
- * globals_extra.c. */
+* (0x8000 / numViewports) instead, which is larger, so any frame count reaching
+* the buffer has to be clamped to this. Must match the definition in
+* globals_extra.c. */
 #define GHOST_BUFFER_FRAMES 0x1600
 extern unsigned short g_taGhostBuffer[];          /* 0x00911d8c */
 extern int s_glTextureDirty[];
@@ -977,10 +984,10 @@ extern int g_gpResultFlag;          /* 0x006da618 */
 extern int g_finishOrderCounter;          /* 0x901c80 */
 extern int g_netLobbyPlayerSlot;          /* 0x689bb4 */
 /* NetworkScreen's own podium Player at 0x8FF880 (see globals_extra.c). Its
- * fields used to be seven separate globals with unrelated names —
- * g_menuTimingValue was really angleYaw (+0x010), g_menuCursorPos was animId
- * (+0x098), g_netLocalCharId was charId (+0x0F2), and so on. Offsets are
- * checked by the _Static_asserts in player_struct.h. */
+* fields used to be seven separate globals with unrelated names —
+* g_menuTimingValue was really angleYaw (+0x010), g_menuCursorPos was animId
+* (+0x098), g_netLocalCharId was charId (+0x0F2), and so on. Offsets are
+* checked by the _Static_asserts in player_struct.h. */
 extern Player g_menuPlayer;             /* 0x8ff880 */
 extern int g_rubberBandThreshold;          /* 0x00540058 */
 extern unsigned short g_autoSteerFlag;          /* 0x0054004c */

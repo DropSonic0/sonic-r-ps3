@@ -14,7 +14,7 @@
 #ifndef SONICR_MUSIC_RWOPS_H
 #define SONICR_MUSIC_RWOPS_H
 
-#if defined(SONICR_SDL) && !defined(__CELLOS_LV2__) && !defined(SN_TARGET_PS3) && !defined(__SNC__) && !defined(__CELL_ASSERT__) && !defined(__PPU__) && !defined(_PS3) && !defined(PS3) && !defined(__PS3__)
+#if defined(SONICR_SDL) && !defined(SONICR_PS3)
 
 #include <SDL.h>
 #include <stdint.h>
