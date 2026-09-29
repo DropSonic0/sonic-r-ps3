@@ -496,10 +496,8 @@ int platform_audio_init(void)
         return 0;
     }
 
-    printf("[PS3 CELL AUDIO] Initializing cellAudioInit()...\n");
     int res = cellAudioInit();
     if (res != CELL_OK && res != CELL_AUDIO_ERROR_ALREADY_INIT) {
-        printf("[PS3 CELL AUDIO] ERROR: cellAudioInit failed 0x%08x\n", res);
         return -1;
     }
 
@@ -518,43 +516,36 @@ int platform_audio_init(void)
 
     res = cellAudioPortOpen(&portParam, &s_audioPortNum);
     if (res != CELL_OK) {
-        printf("[PS3 CELL AUDIO] ERROR: cellAudioPortOpen failed 0x%08x\n", res);
         return -1;
     }
 
     res = cellAudioCreateNotifyEventQueue(&s_audioEventQueue, &s_audioEventKey);
     if (res != CELL_OK) {
-        printf("[PS3 CELL AUDIO] ERROR: cellAudioCreateNotifyEventQueue failed 0x%08x\n", res);
         return -1;
     }
 
     res = cellAudioSetNotifyEventQueue(s_audioEventKey);
     if (res != CELL_OK) {
-        printf("[PS3 CELL AUDIO] ERROR: cellAudioSetNotifyEventQueue failed 0x%08x\n", res);
         return -1;
     }
 
     s_audioTerminate = 0;
     res = sys_ppu_thread_create(&s_audioThreadHandle, ps3_audio_thread, 0, 500, 128 * 1024, SYS_PPU_THREAD_CREATE_JOINABLE, "AudioThread");
     if (res != CELL_OK) {
-        printf("[PS3 CELL AUDIO] ERROR: sys_ppu_thread_create AudioThread failed 0x%08x\n", res);
         return -1;
     }
 
     res = sys_ppu_thread_create(&s_bgmIoThreadHandle, ps3_bgm_io_thread, 0, 1000, 128 * 1024, SYS_PPU_THREAD_CREATE_JOINABLE, "BgmIoThread");
     if (res != CELL_OK) {
-        printf("[PS3 CELL AUDIO] ERROR: sys_ppu_thread_create BgmIoThread failed 0x%08x\n", res);
         return -1;
     }
 
     res = cellAudioPortStart(s_audioPortNum);
     if (res != CELL_OK) {
-        printf("[PS3 CELL AUDIO] ERROR: cellAudioPortStart failed 0x%08x\n", res);
         return -1;
     }
 
     s_cellAudioInitialized = 1;
-    printf("[PS3 CELL AUDIO] Audio subsystem initialized successfully!\n");
     return 0;
 }
 
@@ -591,7 +582,7 @@ void platform_audio_shutdown(void)
     sys_mutex_destroy(s_bgmIoMutex);
 
     s_cellAudioInitialized = 0;
-    printf("[PS3 CELL AUDIO] Audio subsystem shut down.\n");
+
 }
 
 /* =====================================================================

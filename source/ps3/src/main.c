@@ -601,16 +601,13 @@ int main(int argc, char *argv[])
 
 	/* Existence test via fOpen (access() is absent from the KOS/newlib
 	* libc used by the Dreamcast build). */
-	printf("[PS3 main] Probing data file: %s\n", PATH_GENERAL_BIT);
 	FILE *probe = fOpen(PATH_GENERAL_BIT, "rb");
 	if (!probe) {
-		printf("[PS3 main] Failed to find %s\n", PATH_GENERAL_BIT);
 		fprintf(stderr,
 			"Game data not found here. Place the binary in the data folder, "
 			"or pass the data path as an argument, and try again.\n");
 		return 1;
 	}
-	printf("[PS3 main] Successfully opened %s!\n", PATH_GENERAL_BIT);
 	fclose(probe);
 
 	/* Save menu settings on any exit (normal, window close, SCREEN_QUIT) */
@@ -1395,13 +1392,6 @@ race_start:
 		g_splashPrevState = g_interlaceMode;
 		if (g_netSessionActive == 0 && g_isNetworkGame == 0) {
 			UpdatePerPlayerInput();
-			if (g_demoMode == DEMO_TITLE && g_introCountdown == 0 &&
-				(g_ghostReadIndex % 30) == 0) {
-				Player *p = &g_playerBase[0];
-				printf("D idx=%d pos=%d,%d,%d spd=%d yaw=%d rng=%d\n",
-					g_ghostReadIndex, p->posX, p->posY, p->posZ,
-					p->forwardSpeed, p->angleYaw & 0xFFF, g_randomRingIdx);
-			}
 		}
 		/* [0x4CC9B4]: debug track/variant-select cheat — deliberately not
 		* ported (debug keys unwired; the intro-countdown reset it was mistranslated as

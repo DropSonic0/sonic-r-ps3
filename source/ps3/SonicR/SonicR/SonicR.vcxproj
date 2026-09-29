@@ -45,7 +45,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|PS3'">
+    <TargetExt>.elf</TargetExt>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|PS3'">
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;__CELL_ASSERT__;SONICR_PS3;SONICR_FLOAT32;SONICR_DEBUG_LOG;BLURRY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -65,13 +67,15 @@
       <PreprocessorDefinitions>NDEBUG;SONICR_PS3;SONICR_FLOAT32;BLURRY;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <OptimizationLevel>Level2</OptimizationLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>C:\sonic-r-ps3\source\ps3\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FastMath>false</FastMath>
       <RelaxAlias>Default</RelaxAlias>
+      <AdditionalOptions>-O3 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libPSGLU.a;libPSGL.a;libPSGLcgc.a;libcgc.a;libgcm_cmd.a;libgcm_sys_stub.a;libresc_stub.a;libsysutil_game_stub.a;libsysutil_stub.a;libio_stub.a;libaudio_stub.a;libpthread.a;libsysmodule_stub.a;libfs_stub.a;libm.a;libnet_stub.a;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\usr\local\cell\target\ppu\lib\PSGL\RSX\ultra-opt;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFormat>ELFFile</OutputFormat>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

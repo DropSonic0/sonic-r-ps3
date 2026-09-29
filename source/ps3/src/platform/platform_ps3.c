@@ -114,7 +114,6 @@ static void ps3_sysutil_callback(uint64_t status, uint64_t param, void *userdata
 	(void)param;
 	(void)userdata;
 	if (status == CELL_SYSUTIL_REQUEST_EXITGAME || status == 0x0101) {
-		printf("[PS3 SYSUTIL] CELL_SYSUTIL_REQUEST_EXITGAME received! Cleaning up...\n");
 		extern void platform_audio_shutdown(void);
 		platform_audio_shutdown();
 		platform_shutdown();
@@ -138,15 +137,14 @@ int platform_init(int width, int height, int fullscreen, const char *title)
 	PSGLinitOptions initOpts;
 	memset(&initOpts, 0, sizeof(PSGLinitOptions));
 	initOpts.enable = PSGL_INIT_MAX_SPUS | PSGL_INIT_INITIALIZE_SPUS | PSGL_INIT_HOST_MEMORY_SIZE;
-	initOpts.maxSPUs = 2;
-	initOpts.initializeSPUs = 2;
+	initOpts.maxSPUs = 1;
+	initOpts.initializeSPUs = 1;
 	initOpts.persistentMemorySize = 0;
 	initOpts.transientMemorySize = 0;
 	initOpts.errorConsole = 0;
 	initOpts.fifoSize = 0;
 	initOpts.hostMemorySize = 32 * 1024 * 1024;
 
-	printf("[PS3 PSGL] Initializing PSGL with psglInit(&initOpts)...\n");
 	psglInit(&initOpts);
 
 	PSGLdeviceParameters params;
@@ -163,21 +161,17 @@ int platform_init(int width, int height, int fullscreen, const char *title)
 	params.multisamplingMode = GL_MULTISAMPLING_NONE_SCE;
 	params.rescRatioMode = RESC_RATIO_MODE_FULLSCREEN;
 
-	printf("[PS3 PSGL] Creating PSGL device with psglCreateDeviceExtended...\n");
 	PSGLdevice *device = psglCreateDeviceExtended(&params);
 	if (!device) {
-		printf("[PS3 PSGL] psglCreateDeviceExtended failed, trying GL_DEPTH_COMPONENT24...\n");
 		params.depthFormat = GL_NONE;
 		device = psglCreateDeviceExtended(&params);
 	}
 	if (!device) {
-		printf("[PS3 PSGL] ERROR: psglCreateDeviceExtended failed!\n");
 		return -1;
 	}
 
 	GLuint glWidth = 0, glHeight = 0;
 	psglGetDeviceDimensions(device, &glWidth, &glHeight);
-	printf("[PS3 PSGL] Device created (%u x %u)\n", glWidth, glHeight);
 	if (glWidth > 0 && glHeight > 0) {
 		s_ps3GlWidth = glWidth;
 		s_ps3GlHeight = glHeight;
@@ -185,14 +179,12 @@ int platform_init(int width, int height, int fullscreen, const char *title)
 
 	PSGLcontext *context = psglCreateContext();
 	if (!context) {
-		printf("[PS3 PSGL] ERROR: psglCreateContext failed!\n");
 		return -1;
 	}
 
 	psglMakeCurrent(context, device);
 	psglResetCurrentContext();
 
-	printf("[PS3 PSGL] PSGL Context initialized successfully!\n");
 	return 0;
 }
 
@@ -317,7 +309,6 @@ void ps3_set_exe_path(const char *argv0)
 	else {
 		s_ps3ExeDir[0] = '\0';
 	}
-	printf("[PS3 fOpen] Set EXE directory: '%s'\n", s_ps3ExeDir);
 }
 
 FILE *ps3_fOpen(const char *path, const char *mode)
@@ -331,7 +322,6 @@ FILE *ps3_fOpen(const char *path, const char *mode)
 			FILE *fpWide = ps3_fOpen(widePath, mode);
 			g_optCfg_470 = 1;
 			if (fpWide != NULL) {
-				printf("[PS3 fOpen] Widescreen texture loaded: '%s'\n", widePath);
 				return fpWide;
 			}
 		}
@@ -339,7 +329,6 @@ FILE *ps3_fOpen(const char *path, const char *mode)
 
 	if (path[0] == '/' || path[0] == '\\') {
 		FILE *fp = fopen(path, mode);
-		printf("[PS3 fOpen] Absolute path '%s' -> %s\n", path, fp ? "OK" : "FAILED");
 		return fp;
 	}
 
@@ -359,12 +348,10 @@ FILE *ps3_fOpen(const char *path, const char *mode)
 		for (int depth = 0; depth <= 5; depth++) {
 			snprintf(fullPath, sizeof(fullPath), "%s%s", currentLevel, relPath);
 			FILE *fp = fopen(fullPath, mode);
-			printf("[PS3 fOpen] Probing '%s' -> %s\n", fullPath, fp ? "SUCCESS" : "failed");
 			if (fp != NULL) return fp;
 
 			snprintf(fullPath, sizeof(fullPath), "%sDATA/%s", currentLevel, relPath);
 			fp = fopen(fullPath, mode);
-			printf("[PS3 fOpen] Probing '%s' -> %s\n", fullPath, fp ? "SUCCESS" : "failed");
 			if (fp != NULL) return fp;
 
 			size_t len = strlen(currentLevel);
@@ -386,19 +373,13 @@ FILE *ps3_fOpen(const char *path, const char *mode)
 
 	/* 2. Static fallback paths */
 	static const char *staticPrefixes[] = {
-		"/app_home/",
-		"/app_home/DATA/",
-		"/dev_hdd0/game/SONICR001/USRDIR/",
-		"/dev_hdd0/game/SONICR001/USRDIR/DATA/",
-		"./",
-		"",
+		"/dev_hdd0/game/SONYCR026/USRDIR/DATA/",
 		NULL
 	};
 
 	for (int i = 0; staticPrefixes[i] != NULL; i++) {
 		snprintf(fullPath, sizeof(fullPath), "%s%s", staticPrefixes[i], relPath);
 		FILE *fp = fopen(fullPath, mode);
-		printf("[PS3 fOpen] Probing '%s' -> %s\n", fullPath, fp ? "SUCCESS" : "failed");
 		if (fp != NULL) return fp;
 	}
 
@@ -447,12 +428,10 @@ int platform_init_gamepads(void)
 		cellSysmoduleLoadModule(CELL_SYSMODULE_PAD);
 		int ret = cellPadInit(CELL_PAD_MAX_PORT_NUM);
 		if (ret == CELL_PAD_OK) {
-			printf("[PS3 CELLPAD] cellPadInit(%d) successful\n", CELL_PAD_MAX_PORT_NUM);
 			s_ps3PadsInitialized = 1;
 			memset(s_lastPadData, 0, sizeof(s_lastPadData));
 		}
 		else {
-			printf("[PS3 CELLPAD] cellPadInit(%d) failed: %d\n", CELL_PAD_MAX_PORT_NUM, ret);
 		}
 	}
 
